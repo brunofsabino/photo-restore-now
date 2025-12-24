@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # Aplicação Next.js
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - DATABASE_URL=postgresql://photorestore:photorestore_dev@postgres:5432/photorestore
+      - REDIS_URL=redis://redis:6379
+      - STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY:-sk_test_dummy}
+      - STRIPE_PUBLISHABLE_KEY=${STRIPE_PUBLISHABLE_KEY:-pk_test_dummy}
+      - STRIPE_WEBHOOK_SECRET=${STRIPE_WEBHOOK_SECRET:-whsec_dummy}
+      - NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=${NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY:-pk_test_dummy}
+      - VANCEAI_API_KEY=${VANCEAI_API_KEY:-dummy}
+      - VANCEAI_API_URL=https://api-service.vanceai.com
+      - HOTPOT_API_KEY=${HOTPOT_API_KEY:-dummy}
+      - HOTPOT_API_URL=https://api.hotpot.ai
+      - RESEND_API_KEY=${RESEND_API_KEY:-re_dummy}
+      - RESEND_FROM_EMAIL=noreply@photorestorenow.com
+      - SESSION_SECRET=${SESSION_SECRET:-development_secret_min_32_chars_long}
+      - STORAGE_PATH=/app/uploads
+    volumes:
+      # Volume para uploads persistentes
+      - uploads:/app/uploads
+    restart: unless-stopped
+    networks:
+      - photo-restore-network
+    depends_on:
+      - postgres
+      - redis
+
+  # Redis (para fila de jobs no futuro)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+    networks:
+      - photo-restore-network
+
+  # PostgreSQL (para database no futuro)
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: photorestore
+      POSTGRES_PASSWORD: photorestore_dev
+      POSTGRES_DB: photorestore
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+    networks:
+      - photo-restore-network
+
+volumes:
+  uploads:
+  redis-data:
+  postgres-data:
+
+networks:
+  photo-restore-network:
+    driver: bridge
