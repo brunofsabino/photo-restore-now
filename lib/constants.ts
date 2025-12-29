@@ -115,9 +115,9 @@ export const API_ROUTES = {
 // ============================================
 
 export const STORAGE_PATHS = {
-  ORIGINAL_IMAGES: 'uploads/original',
-  RESTORED_IMAGES: 'uploads/restored',
-  TEMP: 'uploads/temp',
+  ORIGINAL_IMAGES: 'original',
+  RESTORED_IMAGES: 'restored',
+  TEMP: 'temp',
 } as const;
 
 // ============================================

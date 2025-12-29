@@ -251,3 +251,13 @@ export async function sendRestorationFailed(
     html,
   });
 }
+
+/**
+ * Email service object for convenient imports
+ */
+export const emailService = {
+  sendEmail,
+  sendOrderConfirmation,
+  sendRestorationComplete,
+  sendRestorationFailed,
+};

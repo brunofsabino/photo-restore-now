@@ -12,7 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
  * Usage:
  * POST /api/test-restore
  * Content-Type: multipart/form-data
- * Body: { image: File, provider?: 'vanceai' | 'hotpot' }
+ * Body: { image: File, provider?: 'vanceai' | 'hotpot' | 'fake' }
  * 
  * Returns: { success, originalUrl, restoredUrl, provider, processingTime }
  */
@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
     const image = formData.get('image') as File;
-    const provider = (formData.get('provider') as string) || 'vanceai';
+    const provider = (formData.get('provider') as string) || 'fake';
 
     if (!image) {
       return NextResponse.json(
@@ -30,9 +30,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Validate provider
-    if (provider !== 'vanceai' && provider !== 'hotpot') {
+    if (provider !== 'vanceai' && provider !== 'hotpot' && provider !== 'fake') {
       return NextResponse.json(
-        { error: 'Invalid provider. Use "vanceai" or "hotpot"' },
+        { error: 'Invalid provider. Use "vanceai", "hotpot" or "fake"' },
         { status: 400 }
       );
     }
@@ -48,13 +48,12 @@ export async function POST(req: NextRequest) {
     const buffer = Buffer.from(bytes);
 
     // Save original image
-    const originalPath = `test/${testId}-original-${image.name}`;
-    await storageService.uploadFile(originalPath, buffer, image.type);
-    console.log(`[TEST-RESTORE] Original image saved to: ${originalPath}`);
+    const originalResult = await storageService.uploadFile(buffer, image.name, 'ORIGINAL_IMAGES', image.type);
+    console.log(`[TEST-RESTORE] Original image saved to: ${originalResult.key}`);
 
     // Get AI provider and restore
     console.log(`[TEST-RESTORE] Initializing ${provider} provider...`);
-    const aiProvider = AIProviderFactory.getProvider(provider);
+    const aiProvider = AIProviderFactory.getProvider(provider as 'vanceai' | 'hotpot' | 'fake');
     
     console.log(`[TEST-RESTORE] Starting restoration...`);
     const restoredBuffer = await aiProvider.restorePhoto(buffer);
@@ -62,29 +61,24 @@ export async function POST(req: NextRequest) {
     console.log(`[TEST-RESTORE] Restoration complete. Size: ${restoredBuffer.length} bytes`);
 
     // Save restored image
-    const restoredPath = `test/${testId}-restored-${image.name}`;
-    await storageService.uploadFile(restoredPath, restoredBuffer, 'image/jpeg');
-    console.log(`[TEST-RESTORE] Restored image saved to: ${restoredPath}`);
+    const restoredResult = await storageService.uploadFile(restoredBuffer, image.name, 'RESTORED_IMAGES', 'image/jpeg');
+    console.log(`[TEST-RESTORE] Restored image saved to: ${restoredResult.key}`);
 
     const processingTime = Date.now() - startTime;
-
-    // Get download URLs
-    const originalUrl = await storageService.getSignedDownloadUrl(originalPath);
-    const restoredUrl = await storageService.getSignedDownloadUrl(restoredPath);
 
     return NextResponse.json({
       success: true,
       testId,
       provider,
       originalImage: {
-        path: originalPath,
-        url: originalUrl,
+        path: originalResult.key,
+        url: originalResult.url,
         size: buffer.length,
         filename: image.name,
       },
       restoredImage: {
-        path: restoredPath,
-        url: restoredUrl,
+        path: restoredResult.key,
+        url: restoredResult.url,
         size: restoredBuffer.length,
       },
       processingTime: `${(processingTime / 1000).toFixed(2)}s`,

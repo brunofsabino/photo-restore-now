@@ -1,0 +1,117 @@
+### PhotoRestoreNow - API Test Requests
+### Use with REST Client extension in VS Code or import to Postman
+
+###############################################
+# PHASE 1: Isolated AI Restoration Testing
+###############################################
+
+### Test Restore with VanceAI
+POST http://localhost:3000/api/test-restore
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+< /path/to/your/photo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="provider"
+
+vanceai
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+### Test Restore with Hotpot
+POST http://localhost:3000/api/test-restore
+Content-Type: multipart/form-data; boundary=----WebKitFormBoundary7MA4YWxkTrZu0gW
+
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="image"; filename="photo.jpg"
+Content-Type: image/jpeg
+
+< /path/to/your/photo.jpg
+------WebKitFormBoundary7MA4YWxkTrZu0gW
+Content-Disposition: form-data; name="provider"
+
+hotpot
+------WebKitFormBoundary7MA4YWxkTrZu0gW--
+
+
+### Get Test Restore API Info
+GET http://localhost:3000/api/test-restore
+
+
+###############################################
+# PHASE 2: Complete Flow Testing (No Payment)
+###############################################
+
+### Check Test Mode Status
+GET http://localhost:3000/api/payment/create-test-order
+
+
+### Create Test Order - 1 Photo
+POST http://localhost:3000/api/payment/create-test-order
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "packageId": "1-photo",
+  "imageFiles": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD..."
+  ]
+}
+
+
+### Create Test Order - 3 Photos
+POST http://localhost:3000/api/payment/create-test-order
+Content-Type: application/json
+
+{
+  "email": "test@example.com",
+  "packageId": "3-photos",
+  "imageFiles": [
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...",
+    "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD..."
+  ]
+}
+
+
+###############################################
+# PRODUCTION ENDPOINTS (Phase 3 - Stripe)
+###############################################
+
+### Create Payment Intent
+POST http://localhost:3000/api/payment/create-intent
+Content-Type: application/json
+
+{
+  "amount": 999,
+  "email": "customer@example.com",
+  "packageId": "1-photo",
+  "imageCount": 1
+}
+
+
+### Check Job Status
+GET http://localhost:3000/api/jobs/status?jobId=job_123456
+
+
+###############################################
+# NOTES
+###############################################
+
+# 1. For multipart/form-data requests, replace:
+#    < /path/to/your/photo.jpg
+#    with actual file path on your system
+
+# 2. For base64 encoded images, use:
+#    base64 -w 0 photo.jpg
+#    Then paste the output in imageFiles array with data:image/jpeg;base64, prefix
+
+# 3. Test Mode must be enabled in .env:
+#    TEST_MODE=true
+
+# 4. For Postman:
+#    - Import this file as "Raw text"
+#    - Or manually create requests using these examples

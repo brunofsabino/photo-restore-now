@@ -28,7 +28,7 @@ interface TestResult {
 
 export default function TestUploadPage() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [provider, setProvider] = useState<'vanceai' | 'hotpot'>('vanceai');
+  const [provider, setProvider] = useState<'vanceai' | 'hotpot' | 'fake'>('fake');
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<TestResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string>('');
@@ -102,7 +102,7 @@ export default function TestUploadPage() {
             <CardHeader>
               <CardTitle>Upload Test Image</CardTitle>
               <CardDescription>
-                Test VanceAI or Hotpot restoration with any photo
+                Test Fake (mock), VanceAI or Hotpot restoration with any photo
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -146,7 +146,18 @@ export default function TestUploadPage() {
                 {/* Provider Selection */}
                 <div>
                   <Label>AI Provider</Label>
-                  <div className="mt-2 flex gap-4">
+                  <div className="mt-2 flex flex-col gap-2">
+                    <label className="flex items-center">
+                      <input
+                        type="radio"
+                        value="fake"
+                        checked={provider === 'fake'}
+                        onChange={(e) => setProvider(e.target.value as 'fake')}
+                        className="mr-2"
+                      />
+                      <span className="font-medium">Fake (Testing)</span>
+                      <span className="ml-2 text-xs text-gray-500">- No API required, instant response</span>
+                    </label>
                     <label className="flex items-center">
                       <input
                         type="radio"

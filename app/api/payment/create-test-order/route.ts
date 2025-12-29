@@ -59,9 +59,8 @@ export async function POST(request: NextRequest) {
         const buffer = Buffer.from(base64Data, 'base64');
 
         // Save original
-        const originalPath = `orders/${orderId}/original/${imageId}.jpg`;
-        await storageService.uploadFile(originalPath, buffer, 'image/jpeg');
-        console.log(`[TEST-ORDER] Original saved: ${originalPath}`);
+        const originalResult = await storageService.uploadFile(buffer, `${imageId}.jpg`, 'ORIGINAL_IMAGES', 'image/jpeg');
+        console.log(`[TEST-ORDER] Original saved: ${originalResult.key}`);
 
         // Restore with AI
         const aiProvider = AIProviderFactory.getProvider();
@@ -69,18 +68,14 @@ export async function POST(request: NextRequest) {
         console.log(`[TEST-ORDER] Image ${i + 1} restored successfully`);
 
         // Save restored
-        const restoredPath = `orders/${orderId}/restored/${imageId}.jpg`;
-        await storageService.uploadFile(restoredPath, restoredBuffer, 'image/jpeg');
-        console.log(`[TEST-ORDER] Restored saved: ${restoredPath}`);
-
-        // Get download URLs
-        const restoredUrl = await storageService.getSignedDownloadUrl(restoredPath);
+        const restoredResult = await storageService.uploadFile(restoredBuffer, `${imageId}.jpg`, 'RESTORED_IMAGES', 'image/jpeg');
+        console.log(`[TEST-ORDER] Restored saved: ${restoredResult.key}`);
 
         results.push({
           imageId,
-          originalPath,
-          restoredPath,
-          restoredUrl,
+          originalPath: originalResult.key,
+          restoredPath: restoredResult.key,
+          restoredUrl: restoredResult.url,
           status: 'success',
         });
 
@@ -101,14 +96,13 @@ export async function POST(request: NextRequest) {
       console.log(`[TEST-ORDER] Sending email to ${email} with ${successfulRestores.length} restored photos`);
       
       try {
-        await emailService.sendRestoredPhotosEmail(
-          email,
-          orderId,
-          successfulRestores.map(r => ({
-            url: r.restoredUrl!,
-            filename: `restored_${r.imageId}.jpg`,
-          }))
-        );
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+        await emailService.sendRestorationComplete({
+          customerEmail: email,
+          jobId: orderId,
+          downloadLinks: successfulRestores.map(r => r.restoredUrl!),
+          expiresAt,
+        });
         console.log(`[TEST-ORDER] Email sent successfully`);
       } catch (emailError: any) {
         console.error(`[TEST-ORDER] Failed to send email:`, emailError);

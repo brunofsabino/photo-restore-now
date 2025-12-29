@@ -49,8 +49,8 @@ export async function uploadFile(
     // Write file
     fs.writeFileSync(filePath, buffer);
 
-    // Generate local URL
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/uploads/${key}`;
+    // Generate URL using the API route
+    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${key}`;
 
     return {
       url,
@@ -72,7 +72,7 @@ export async function getSignedDownloadUrl(
   expiresIn: number = 3600
 ): Promise<string> {
   try {
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/uploads/${key}`;
+    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${key}`;
     return url;
   } catch (error) {
     console.error('Error generating download URL:', error);
@@ -148,3 +148,16 @@ export async function uploadRestoredImage(
 ): Promise<UploadResult> {
   return uploadFile(buffer, filename, 'RESTORED_IMAGES');
 }
+
+/**
+ * Storage service object for convenient imports
+ */
+export const storageService = {
+  uploadFile,
+  getSignedDownloadUrl,
+  downloadFile,
+  deleteFile,
+  deleteFiles,
+  uploadOriginalImage,
+  uploadRestoredImage,
+};
