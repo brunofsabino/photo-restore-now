@@ -4,6 +4,9 @@
 FROM node:18-alpine AS deps
 WORKDIR /app
 
+# Instalar OpenSSL necessário para Prisma
+RUN apk add --no-cache openssl
+
 # Copiar package files
 COPY package.json package-lock.json* ./
 
@@ -13,6 +16,9 @@ RUN npm ci
 # Stage 2: Build
 FROM node:18-alpine AS builder
 WORKDIR /app
+
+# Instalar OpenSSL necessário para Prisma
+RUN apk add --no-cache openssl
 
 # Variáveis de ambiente dummy para build
 ENV STRIPE_SECRET_KEY="sk_test_dummy_for_build"
@@ -28,6 +34,7 @@ ENV RESEND_FROM_EMAIL="noreply@photorestorenow.com"
 ENV DATABASE_URL="postgresql://dummy:dummy@localhost:5432/dummy"
 ENV REDIS_URL="redis://localhost:6379"
 ENV SESSION_SECRET="dummy_session_secret_for_build_only"
+ENV NEXTAUTH_SECRET="dummy_nextauth_secret_for_build_only"
 ENV STORAGE_PATH="./uploads"
 ENV NEXT_PUBLIC_APP_URL="http://localhost:3000"
 
@@ -37,12 +44,18 @@ COPY --from=deps /app/node_modules ./node_modules
 # Copiar código fonte
 COPY . .
 
+# Gerar Prisma client (usando o prisma local instalado)
+RUN npm run prisma:generate || echo "Prisma generate skipped"
+
 # Build da aplicação
 RUN npm run build
 
 # Stage 3: Runtime
 FROM node:18-alpine AS runner
 WORKDIR /app
+
+# Instalar OpenSSL necessário para Prisma
+RUN apk add --no-cache openssl libssl3
 
 ENV NODE_ENV=production
 

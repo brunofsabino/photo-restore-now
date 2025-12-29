@@ -24,13 +24,12 @@ services:
       - RESEND_API_KEY=${RESEND_API_KEY:-re_dummy}
       - RESEND_FROM_EMAIL=noreply@photorestorenow.com
       - SESSION_SECRET=${SESSION_SECRET:-development_secret_min_32_chars_long}
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET:-development_nextauth_secret_min_32_chars}
       - STORAGE_PATH=/app/uploads
     volumes:
       # Volume para uploads persistentes
       - uploads:/app/uploads
     restart: unless-stopped
-    networks:
-      - photo-restore-network
     depends_on:
       - postgres
       - redis
@@ -44,8 +43,6 @@ services:
       - redis-data:/data
     command: redis-server --appendonly yes
     restart: unless-stopped
-    networks:
-      - photo-restore-network
 
   # PostgreSQL (para database no futuro)
   postgres:
@@ -59,14 +56,8 @@ services:
     volumes:
       - postgres-data:/var/lib/postgresql/data
     restart: unless-stopped
-    networks:
-      - photo-restore-network
 
 volumes:
   uploads:
   redis-data:
   postgres-data:
-
-networks:
-  photo-restore-network:
-    driver: bridge
