@@ -2,12 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Elements } from '@stripe/react-stripe-js';
+import { loadStripe } from '@stripe/stripe-js';
 import { useCart } from '@/contexts/CartContext';
 import { PRICING_PACKAGES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
+import { StripePaymentForm } from '@/components/checkout/StripePaymentForm';
+
+// Initialize Stripe
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || ''
+);
 
 export default function CheckoutPage() {
   const router = useRouter();
@@ -16,9 +24,26 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [mounted, setMounted] = useState(false);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [stripeConfigured, setStripeConfigured] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    
+    // Check if Stripe is configured
+    setStripeConfigured(!!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && 
+                        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== 'pk_test_your_stripe_publishable_key');
+    
+    // Check if user is coming as guest from sessionStorage
+    const guestCheckout = sessionStorage.getItem('guestCheckout');
+    if (guestCheckout) {
+      try {
+        const guestData = JSON.parse(guestCheckout);
+        setEmail(guestData.email || '');
+      } catch (e) {
+        console.error('Failed to parse guest data:', e);
+      }
+    }
   }, []);
 
   useEffect(() => {
@@ -27,45 +52,66 @@ export default function CheckoutPage() {
     }
   }, [cartState.items.length, router, mounted]);
 
+  // Create payment intent when email is set and Stripe is configured
+  useEffect(() => {
+    if (!email || !stripeConfigured || clientSecret || cartState.items.length === 0) {
+      return;
+    }
+
+    const createPaymentIntent = async () => {
+      try {
+        const total = getTotalAmount();
+        const totalPhotos = cartState.totalImages;
+        const firstItem = cartState.items[0];
+        const packageId = firstItem?.packageId || '1-photo';
+
+        const response = await fetch('/api/payment/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: total,
+            email,
+            packageId: packageId,
+            imageCount: totalPhotos,
+          }),
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setClientSecret(result.data.clientSecret);
+        }
+      } catch (err) {
+        console.error('Failed to create payment intent:', err);
+      }
+    };
+
+    createPaymentIntent();
+  }, [email, stripeConfigured, clientSecret, cartState, getTotalAmount]);
+
   const handleCheckout = async () => {
     if (!email || !email.includes('@')) {
       setError('Please enter a valid email');
       return;
     }
 
-    setLoading(true);
-    setError('');
-
-    try {
-      const total = getTotalAmount();
-      
-      // Criar payment intent
-      const response = await fetch('/api/payment/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: total,
-          currency: 'usd',
-          email,
-          cart: cartState.items,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to create payment');
-      }
-
-      const { clientSecret } = await response.json();
-      
-      alert('🎉 Payment simulated successfully! In production, this would redirect to Stripe.');
-      clearCart();
-      router.push('/');
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error processing payment');
-    } finally {
-      setLoading(false);
+    if (!stripeConfigured) {
+      // Fallback for when Stripe is not configured
+      setLoading(true);
+      setTimeout(() => {
+        alert('🎉 Order simulated! Configure Stripe to accept real payments.');
+        clearCart();
+        router.push('/');
+        setLoading(false);
+      }, 1000);
+      return;
     }
+
+    // With Stripe configured, the form submission is handled by StripePaymentForm
+  };
+
+  const handlePaymentSuccess = () => {
+    clearCart();
+    router.push('/');
   };
 
   if (!mounted || cartState.items.length === 0) {
@@ -139,13 +185,14 @@ export default function CheckoutPage() {
           {/* Payment Form */}
           <Card>
             <CardHeader>
-              <CardTitle>Contact Information</CardTitle>
-              <CardDescription>We'll send your restored photos by email</CardDescription>
+              <CardTitle>Payment Information</CardTitle>
+              <CardDescription>Complete your order securely</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* Email */}
               <div>
                 <label htmlFor="email" className="block text-sm font-medium mb-2">
-                  Email
+                  Email *
                 </label>
                 <Input
                   id="email"
@@ -154,35 +201,93 @@ export default function CheckoutPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
+                  disabled={loading}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  Receipt and download links will be sent here
+                </p>
               </div>
 
-              {error && (
-                <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
-                  {error}
+              {/* Stripe Payment Section */}
+              {stripeConfigured && clientSecret ? (
+                <div className="border rounded-lg p-4 bg-white">
+                  <Elements 
+                    stripe={stripePromise} 
+                    options={{
+                      clientSecret,
+                      appearance: {
+                        theme: 'stripe',
+                        variables: {
+                          colorPrimary: '#3b82f6',
+                        },
+                      },
+                    }}
+                  >
+                    <StripePaymentForm 
+                      amount={total}
+                      onSuccess={handlePaymentSuccess}
+                    />
+                  </Elements>
                 </div>
-              )}
+              ) : (
+                <>
+                  {/* Placeholder when Stripe is not configured */}
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 bg-gray-50">
+                    <div className="text-center text-gray-500 space-y-2">
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <svg className="w-8 h-8" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                          <path d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3v-8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                        <span className="font-semibold text-lg text-gray-700">Credit Card Payment</span>
+                      </div>
+                      <p className="text-sm">
+                        💳 <strong>Stripe payment form would appear here</strong>
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        (Credit/Debit Card, Apple Pay, Google Pay)
+                      </p>
+                      <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded text-xs text-left">
+                        <p className="font-semibold text-yellow-800 mb-1">ℹ️ Development Mode:</p>
+                        <p className="text-yellow-700">
+                          To enable Stripe payments, configure STRIPE_SECRET_KEY and STRIPE_PUBLISHABLE_KEY in .env.local
+                        </p>
+                      </div>
+                    </div>
+                  </div>
 
-              <div className="bg-blue-50 border border-blue-200 rounded p-4">
-                <h4 className="font-semibold mb-2">✨ What you'll receive:</h4>
-                <ul className="text-sm space-y-1 text-gray-700">
-                  <li>✓ High-resolution restored photos</li>
-                  <li>✓ Email delivery within 24h</li>
-                  <li>✓ Unlimited downloads for 30 days</li>
-                  <li>✓ 100% satisfaction guarantee</li>
-                </ul>
-              </div>
+                  {error && (
+                    <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded">
+                      {error}
+                    </div>
+                  )}
+
+                  <div className="bg-blue-50 border border-blue-200 rounded p-4">
+                    <h4 className="font-semibold mb-2">✨ What you'll receive:</h4>
+                    <ul className="text-sm space-y-1 text-gray-700">
+                      <li>✓ High-resolution restored photos</li>
+                      <li>✓ Email delivery within 24h</li>
+                      <li>✓ Unlimited downloads for 30 days</li>
+                      <li>✓ 100% satisfaction guarantee</li>
+                    </ul>
+                  </div>
+                </>
+              )}
             </CardContent>
-            <CardFooter>
-              <Button 
-                onClick={handleCheckout} 
-                disabled={loading || !email}
-                className="w-full"
-                size="lg"
-              >
-                {loading ? 'Processing...' : `Pay $${(total / 100).toFixed(2)}`}
-              </Button>
-            </CardFooter>
+            {!stripeConfigured && (
+              <CardFooter className="flex-col gap-2">
+                <Button 
+                  onClick={handleCheckout} 
+                  disabled={loading || !email}
+                  className="w-full"
+                  size="lg"
+                >
+                  {loading ? 'Processing...' : `Simulate Order - $${(total / 100).toFixed(2)}`}
+                </Button>
+                <p className="text-xs text-center text-gray-500">
+                  🔒 Secure payment powered by Stripe
+                </p>
+              </CardFooter>
+            )}
           </Card>
         </div>
 

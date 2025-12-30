@@ -1,25 +1,28 @@
-'use client'
+"use client"
 
-import { Suspense, useState, useEffect } from "react"
+import { useState } from "react"
 import { signIn } from "next-auth/react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 
-function SignInContent() {
+interface SignInModalProps {
+  isOpen: boolean
+  onClose: () => void
+  callbackUrl?: string
+  packageId?: string
+}
+
+export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInModalProps) {
   const router = useRouter()
-  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [guestEmail, setGuestEmail] = useState("")
   const [guestName, setGuestName] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const [showGuestForm, setShowGuestForm] = useState(false)
-  const [isOpen, setIsOpen] = useState(true)
-
-  const callbackUrl = searchParams.get('callbackUrl') || '/upload'
 
   const handleGuestCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -48,8 +51,10 @@ function SignInContent() {
         description: "Continuing as guest...",
       })
 
-      // Redirect to the callback URL
-      router.push(callbackUrl)
+      // Close modal and redirect
+      onClose()
+      const redirectUrl = callbackUrl || '/upload'
+      router.push(redirectUrl)
     } catch (error) {
       console.error('Guest checkout error:', error)
       toast({
@@ -64,7 +69,8 @@ function SignInContent() {
 
   const handleOAuthSignIn = async (provider: 'google' | 'facebook') => {
     try {
-      await signIn(provider, { callbackUrl })
+      const redirectUrl = callbackUrl || '/upload'
+      await signIn(provider, { callbackUrl: redirectUrl })
     } catch (error) {
       toast({
         title: "Authentication Error",
@@ -74,17 +80,8 @@ function SignInContent() {
     }
   }
 
-  const handleOpenChange = (open: boolean) => {
-    // Bloqueia o fechamento - só pode fechar clicando no X ou fazendo signin
-    // Se tentar fechar, não faz nada
-    if (!open) {
-      // Opcional: pode voltar para pricing se tentar fechar
-      // router.push('/pricing')
-    }
-  }
-
   return (
-    <Dialog open={isOpen} onOpenChange={handleOpenChange}>
+    <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent 
         className="sm:max-w-md"
         onInteractOutside={(e) => {
@@ -210,19 +207,5 @@ function SignInContent() {
         </div>
       </DialogContent>
     </Dialog>
-  )
-}
-
-export default function SignIn() {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-50 to-white">
-      <Suspense fallback={
-        <div className="flex items-center justify-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        </div>
-      }>
-        <SignInContent />
-      </Suspense>
-    </div>
   )
 }

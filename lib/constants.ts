@@ -169,6 +169,7 @@ export const JOB_CONFIG = {
 export const APP_ROUTES = {
   HOME: '/',
   PRICING: '/pricing',
+  SIGNIN: '/auth/signin',
   UPLOAD: '/upload',
   CHECKOUT: '/checkout',
   DASHBOARD: '/dashboard',

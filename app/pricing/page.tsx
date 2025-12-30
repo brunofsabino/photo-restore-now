@@ -7,9 +7,20 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 import { Check } from 'lucide-react';
+import { SignInModal } from '@/components/auth/SignInModal';
 
 export default function PricingPage() {
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+
+  const handleChoosePackage = (packageId: string) => {
+    setSelectedPackage(packageId);
+    setShowSignInModal(true);
+  };
+
+  const callbackUrl = selectedPackage 
+    ? `${APP_ROUTES.UPLOAD}?package=${selectedPackage}` 
+    : APP_ROUTES.UPLOAD;
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -24,6 +35,14 @@ export default function PricingPage() {
           </Link>
         </div>
       </nav>
+
+      {/* Sign In Modal */}
+      <SignInModal 
+        isOpen={showSignInModal} 
+        onClose={() => setShowSignInModal(false)}
+        callbackUrl={callbackUrl}
+        packageId={selectedPackage || undefined}
+      />
 
       {/* Pricing Section */}
       <section className="container mx-auto px-4 py-20">
@@ -74,15 +93,14 @@ export default function PricingPage() {
               </CardContent>
 
               <CardFooter>
-                <Link href={`${APP_ROUTES.UPLOAD}?package=${pkg.id}`} className="w-full">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    variant={pkg.popular ? 'default' : 'outline'}
-                  >
-                    Choose {pkg.name}
-                  </Button>
-                </Link>
+                <Button
+                  onClick={() => handleChoosePackage(pkg.id)}
+                  className="w-full"
+                  size="lg"
+                  variant={pkg.popular ? 'default' : 'outline'}
+                >
+                  Choose {pkg.name}
+                </Button>
               </CardFooter>
             </Card>
           ))}
