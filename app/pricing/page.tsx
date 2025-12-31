@@ -1,21 +1,40 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
 import { Check } from 'lucide-react';
 import { SignInModal } from '@/components/auth/SignInModal';
+import { CartButton } from '@/components/CartButton';
 
 export default function PricingPage() {
+  const router = useRouter();
+  const { data: session } = useSession();
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  useEffect(() => {
+    // Check if user is authenticated (OAuth) or guest
+    const guestCheckout = sessionStorage.getItem('guestCheckout');
+    const hasAuth = !!session || !!guestCheckout;
+    setIsAuthenticated(hasAuth);
+  }, [session]);
 
   const handleChoosePackage = (packageId: string) => {
     setSelectedPackage(packageId);
-    setShowSignInModal(true);
+    
+    // If user is already authenticated (guest, Google, or Facebook), go directly to upload
+    if (isAuthenticated) {
+      router.push(`${APP_ROUTES.UPLOAD}?package=${packageId}`);
+    } else {
+      setShowSignInModal(true);
+    }
   };
 
   const callbackUrl = selectedPackage 
@@ -30,9 +49,12 @@ export default function PricingPage() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <Link href={APP_ROUTES.HOME}>
-            <Button variant="ghost">Back to Home</Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <CartButton />
+            <Link href={APP_ROUTES.HOME}>
+              <Button variant="ghost">Back to Home</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

@@ -2,15 +2,17 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useCart } from '@/contexts/CartContext';
-import { PRICING_PACKAGES } from '@/lib/constants';
+import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { X } from 'lucide-react';
 import { StripePaymentForm } from '@/components/checkout/StripePaymentForm';
+import { CartButton } from '@/components/CartButton';
 
 // Initialize Stripe
 const stripePromise = loadStripe(
@@ -26,6 +28,7 @@ export default function CheckoutPage() {
   const [mounted, setMounted] = useState(false);
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState(false);
+  const [imageUrls, setImageUrls] = useState<Map<string, string[]>>(new Map());
 
   useEffect(() => {
     setMounted(true);
@@ -46,11 +49,41 @@ export default function CheckoutPage() {
     }
   }, []);
 
+  // Create object URLs for images and cleanup
+  useEffect(() => {
+    const urlMap = new Map<string, string[]>();
+    
+    cartState.items.forEach(item => {
+      const urls = item.images.map(file => URL.createObjectURL(file));
+      urlMap.set(item.id, urls);
+    });
+    
+    setImageUrls(urlMap);
+    
+    // Cleanup function to revoke object URLs
+    return () => {
+      urlMap.forEach(urls => {
+        urls.forEach(url => URL.revokeObjectURL(url));
+      });
+    };
+  }, [cartState.items]);
+
   useEffect(() => {
     if (mounted && cartState.items.length === 0) {
       router.push('/pricing');
+      return;
     }
-  }, [cartState.items.length, router, mounted]);
+    
+    // Check if all items are orphaned (no images)
+    if (mounted && cartState.items.length > 0) {
+      const validItems = cartState.items.filter(item => item.images.length > 0);
+      if (validItems.length === 0) {
+        // All items are orphaned, redirect to pricing
+        clearCart();
+        router.push('/pricing');
+      }
+    }
+  }, [cartState.items, router, mounted, clearCart]);
 
   // Create payment intent when email is set and Stripe is configured
   useEffect(() => {
@@ -129,45 +162,103 @@ export default function CheckoutPage() {
   const totalPhotos = cartState.totalImages;
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <h1 className="text-4xl font-bold text-center mb-8">Checkout</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Navigation */}
+      <nav className="border-b bg-white">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
+          <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
+            PhotoRestoreNow
+          </Link>
+          <div className="flex items-center gap-4">
+            <CartButton />
+            <Link href={APP_ROUTES.PRICING}>
+              <Button variant="ghost">Back to Pricing</Button>
+            </Link>
+          </div>
+        </div>
+      </nav>
 
-        <div className="grid md:grid-cols-2 gap-8">
-          {/* Order Summary */}
+      <div className="py-12">
+        <div className="container mx-auto px-4 max-w-4xl">
+          <h1 className="text-4xl font-bold text-center mb-8">Checkout</h1>
+
+          <div className="grid md:grid-cols-2 gap-8">{/* Order Summary */}
           <Card>
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
               <CardDescription>Review your items before checkout</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              {cartState.items.map((item) => {
+              {cartState.items.filter(item => item.images.length > 0).map((item) => {
                 const pkg = PRICING_PACKAGES.find(p => p.id === item.packageId);
                 const itemPrice = pkg?.price || 0;
                 
                 return (
-                  <div key={item.id} className="flex justify-between items-center pb-3 border-b">
-                    <div className="flex-1">
-                      <p className="font-medium">{pkg?.name || item.packageId}</p>
-                      <p className="text-sm text-gray-600">
-                        {item.images.length} photo{item.images.length > 1 ? 's' : ''}
-                      </p>
+                  <div key={item.id} className="border-b pb-4 last:border-b-0">
+                    <div className="flex justify-between items-start mb-3">
+                      <div className="flex-1">
+                        <p className="font-medium">{pkg?.name || item.packageId}</p>
+                        <p className="text-sm text-gray-600">
+                          {item.images.length} photo{item.images.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <p className="font-semibold">
+                          ${(itemPrice / 100).toFixed(2)}
+                        </p>
+                        <button
+                          onClick={() => removeFromCart(item.id)}
+                          className="text-gray-400 hover:text-red-600 transition-colors"
+                          aria-label="Remove item"
+                        >
+                          <X className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-3">
-                      <p className="font-semibold">
-                        ${(itemPrice / 100).toFixed(2)}
-                      </p>
-                      <button
-                        onClick={() => removeFromCart(item.id)}
-                        className="text-gray-400 hover:text-red-600 transition-colors"
-                        aria-label="Remove item"
-                      >
-                        <X className="h-5 w-5" />
-                      </button>
+                    
+                    {/* Photo thumbnails */}
+                    <div className="grid grid-cols-4 gap-2">
+                      {imageUrls.get(item.id)?.map((url, index) => (
+                        <div 
+                          key={index} 
+                          className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 border border-gray-200 hover:border-primary transition-colors"
+                        >
+                          <img
+                            src={url}
+                            alt={`Photo ${index + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent text-white text-xs py-1 text-center">
+                            #{index + 1}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 );
               })}
+
+              {/* Add More Photos Banner */}
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900">
+                      💡 Want to restore more photos?
+                    </p>
+                    <p className="text-xs text-blue-700 mt-1">
+                      Add more packages to your order
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => router.push('/pricing')}
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-300 text-blue-700 hover:bg-blue-100"
+                  >
+                    Add More Photos
+                  </Button>
+                </div>
+              </div>
 
               <div className="pt-4 space-y-2">
                 <div className="flex justify-between text-gray-600">
@@ -308,6 +399,7 @@ export default function CheckoutPage() {
             <h3 className="font-semibold mb-1">Satisfaction Guaranteed</h3>
             <p className="text-sm text-gray-600">100% refund</p>
           </div>
+        </div>
         </div>
       </div>
     </div>

@@ -81,7 +81,7 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
   }
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => {}}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-md"
         onInteractOutside={(e) => {

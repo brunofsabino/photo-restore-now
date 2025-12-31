@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES } from '@/lib/constants';
 import { Sparkles, Clock, Shield, Heart } from 'lucide-react';
+import { CartButton } from '@/components/CartButton';
 
 export default function HomePage() {
   return (
@@ -24,9 +25,12 @@ export default function HomePage() {
               Testimonials
             </Link>
           </div>
-          <Link href={APP_ROUTES.PRICING}>
-            <Button size="lg">Get Started</Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <CartButton />
+            <Link href={APP_ROUTES.PRICING}>
+              <Button size="lg">Get Started</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 

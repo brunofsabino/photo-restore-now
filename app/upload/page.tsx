@@ -12,6 +12,7 @@ import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from 
 import { formatPrice, formatFileSize, isValidFileType, isValidFileSize } from '@/lib/utils';
 import { PackageType } from '@/types';
 import { Upload, X, AlertCircle } from 'lucide-react';
+import { CartButton } from '@/components/CartButton';
 
 function UploadPageContent() {
   const router = useRouter();
@@ -104,9 +105,12 @@ function UploadPageContent() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <Link href={APP_ROUTES.PRICING}>
-            <Button variant="ghost">Back to Pricing</Button>
-          </Link>
+          <div className="flex items-center gap-4">
+            <CartButton />
+            <Link href={APP_ROUTES.PRICING}>
+              <Button variant="ghost">Back to Pricing</Button>
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -168,25 +172,35 @@ function UploadPageContent() {
                 <h3 className="font-semibold mb-3">
                   Selected Photos ({selectedFiles.length}/{packageInfo.photoCount})
                 </h3>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {selectedFiles.map((file, index) => (
                     <div
                       key={index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="relative group"
                     >
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium truncate">{file.name}</p>
-                        <p className="text-sm text-gray-500">
-                          {formatFileSize(file.size)}
-                        </p>
+                      <div className="aspect-square rounded-lg overflow-hidden bg-gray-100 border-2 border-gray-200">
+                        <img
+                          src={URL.createObjectURL(file)}
+                          alt={file.name}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => removeFile(index)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      <div className="mt-2 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">{file.name}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatFileSize(file.size)}
+                          </p>
+                        </div>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => removeFile(index)}
+                          className="ml-2 h-8 w-8 text-red-500 hover:text-red-700 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>
