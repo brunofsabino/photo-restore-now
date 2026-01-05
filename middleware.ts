@@ -1,8 +1,20 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { getToken } from 'next-auth/jwt'
+import { rateLimit } from './lib/rate-limit'
 
 export async function middleware(request: NextRequest) {
+  // Apply rate limiting to API routes
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    const allowed = rateLimit(request);
+    if (!allowed) {
+      return NextResponse.json(
+        { error: 'Too many requests. Please try again later.' },
+        { status: 429 }
+      );
+    }
+  }
+
   const token = await getToken({ req: request })
   const isAuth = !!token
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth/signin')
@@ -11,7 +23,7 @@ export async function middleware(request: NextRequest) {
   const hasGuestSession = request.cookies.has('guestCheckout')
 
   // Protect these routes - allow if authenticated OR has guest session
-  const protectedRoutes = ['/upload', '/checkout', '/orders']
+  const protectedRoutes = ['/upload', '/checkout']
   const isProtectedRoute = protectedRoutes.some(route => 
     request.nextUrl.pathname.startsWith(route)
   )
@@ -35,7 +47,7 @@ export const config = {
   matcher: [
     '/upload/:path*',
     '/checkout/:path*',
-    '/orders/:path*',
-    '/auth/signin'
+    '/auth/signin',
+    '/api/:path*'  // Apply rate limiting to all API routes
   ]
 }

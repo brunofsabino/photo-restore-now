@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
+import { sanitizeEmail, sanitizeName, isValidEmail } from "@/lib/sanitization"
+import { logger } from "@/lib/logger"
 
 interface SignInModalProps {
   isOpen: boolean
@@ -27,12 +29,17 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
   const handleGuestCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!guestEmail || !guestEmail.includes('@')) {
+    // Sanitize and validate inputs
+    const sanitizedEmail = sanitizeEmail(guestEmail)
+    const sanitizedName = sanitizeName(guestName)
+    
+    if (!isValidEmail(sanitizedEmail)) {
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
         variant: "destructive",
       })
+      logger.security('Invalid email attempt in guest checkout', { email: guestEmail })
       return
     }
 
@@ -41,10 +48,15 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
     try {
       // Store guest info in sessionStorage for checkout
       sessionStorage.setItem('guestCheckout', JSON.stringify({
-        email: guestEmail,
-        name: guestName || 'Guest',
+        email: sanitizedEmail,
+        name: sanitizedName || 'Guest',
         timestamp: Date.now()
       }))
+
+      logger.info('Guest checkout initiated', { 
+        email: sanitizedEmail,
+        hasName: !!sanitizedName 
+      })
 
       toast({
         title: "Success!",
@@ -56,7 +68,7 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
       const redirectUrl = callbackUrl || '/upload'
       router.push(redirectUrl)
     } catch (error) {
-      console.error('Guest checkout error:', error)
+      logger.error('Guest checkout error', error as Error, { email: sanitizedEmail })
       toast({
         title: "Error",
         description: "Something went wrong. Please try again.",

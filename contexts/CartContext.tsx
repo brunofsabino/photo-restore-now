@@ -19,9 +19,9 @@ import {
 
 interface CartContextType {
   cart: Cart;
-  addToCart: (packageId: PackageType, images: File[]) => void;
-  removeFromCart: (itemId: string) => void;
-  clearCart: () => void;
+  addToCart: (packageId: PackageType, images: File[]) => Promise<void>;
+  removeFromCart: (itemId: string) => Promise<void>;
+  clearCart: () => Promise<void>;
   getTotalAmount: () => number;
 }
 

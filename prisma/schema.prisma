@@ -8,6 +8,9 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  // Enable SSL for production
+  // In production, ensure DATABASE_URL includes sslmode=require
+  // Example: postgresql://user:pass@host:5432/db?sslmode=require
 }
 
 model User {
@@ -60,13 +63,16 @@ model VerificationToken {
 
 model Order {
   id              String   @id @default(cuid())
-  userId          String
+  userId          String?  // Nullable for guest checkout
+  email           String   // Always required (guest or OAuth)
   packageId       String
   amount          Int
-  status          String
+  status          String   // "processing" | "completed" | "failed"
   paymentIntentId String?
   photoCount      Int      @default(0)
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  originalFiles   String[] // URLs to original uploaded photos
+  restoredFiles   String[] // URLs to restored photos
+  user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 }

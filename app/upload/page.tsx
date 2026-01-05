@@ -83,7 +83,7 @@ function UploadPageContent() {
     setSelectedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleContinue = () => {
+  const handleContinue = async () => {
     if (selectedFiles.length === 0) {
       toast({
         title: 'No Photos Selected',
@@ -93,7 +93,7 @@ function UploadPageContent() {
       return;
     }
 
-    addToCart(packageId, selectedFiles);
+    await addToCart(packageId, selectedFiles);
     router.push(APP_ROUTES.CHECKOUT);
   };
 

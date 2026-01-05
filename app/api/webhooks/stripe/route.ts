@@ -4,29 +4,39 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { verifyWebhookSignature } from '@/services/payment.service';
+import { verifyStripeWebhook } from '@/lib/webhook-verification';
+import { logger } from '@/lib/logger';
 import Stripe from 'stripe';
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.text();
-    const signature = request.headers.get('stripe-signature');
-
-    if (!signature) {
+    // Verify webhook signature
+    const verification = await verifyStripeWebhook(request);
+    
+    if (!verification.valid) {
+      logger.security('Stripe webhook verification failed', {
+        error: verification.error,
+        ip: request.ip || 'unknown',
+      });
+      
       return NextResponse.json(
-        { error: 'Missing stripe-signature header' },
-        { status: 400 }
+        { error: 'Webhook verification failed' },
+        { status: 401 }
       );
     }
 
-    // Verify webhook signature
-    const event = verifyWebhookSignature(body, signature);
+    const event = verification.event;
 
     // Handle different event types
     switch (event.type) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log('Payment succeeded:', paymentIntent.id);
+        
+        logger.info('Payment succeeded', {
+          paymentIntentId: paymentIntent.id,
+          amount: paymentIntent.amount,
+          email: paymentIntent.receipt_email,
+        });
 
         // TODO: Trigger job processing
         // This is where you'd create a restoration job
@@ -44,7 +54,12 @@ export async function POST(request: NextRequest) {
 
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object as Stripe.PaymentIntent;
-        console.log('Payment failed:', paymentIntent.id);
+        
+        logger.warn('Payment failed', {
+          paymentIntentId: paymentIntent.id,
+          error: paymentIntent.last_payment_error?.message,
+        });
+        
         // Handle failed payment
         break;
       }
