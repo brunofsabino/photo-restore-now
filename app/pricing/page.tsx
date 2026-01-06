@@ -3,12 +3,12 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
-import { Check } from 'lucide-react';
+import { Check, User, LogOut } from 'lucide-react';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { CartButton } from '@/components/CartButton';
 
@@ -49,10 +49,29 @@ export default function PricingPage() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <CartButton />
+            {session?.user && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-800">
+                    {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            )}
             <Link href={APP_ROUTES.HOME}>
-              <Button variant="ghost">Back to Home</Button>
+              <Button variant="ghost" size="sm">Back to Home</Button>
             </Link>
           </div>
         </div>

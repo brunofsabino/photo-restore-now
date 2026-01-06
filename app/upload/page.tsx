@@ -2,6 +2,7 @@
 
 import { useState, useRef, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +12,7 @@ import { useCart } from '@/contexts/CartContext';
 import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '@/lib/constants';
 import { formatPrice, formatFileSize, isValidFileType, isValidFileSize } from '@/lib/utils';
 import { PackageType } from '@/types';
-import { Upload, X, AlertCircle } from 'lucide-react';
+import { Upload, X, AlertCircle, User, LogOut } from 'lucide-react';
 import { CartButton } from '@/components/CartButton';
 
 function UploadPageContent() {
@@ -20,12 +21,31 @@ function UploadPageContent() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { addToCart } = useCart();
+  const { data: session, status } = useSession();
 
   const packageId = (searchParams.get('package') as PackageType) || '1-photo';
   const packageInfo = PRICING_PACKAGES.find(p => p.id === packageId);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Redirect to signin if not authenticated
+  if (status === 'unauthenticated') {
+    router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent('/upload?package=' + packageId));
+    return null;
+  }
+
+  // Show loading while checking authentication
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!packageInfo) {
     return <div>Package not found</div>;
@@ -105,16 +125,40 @@ function UploadPageContent() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             <CartButton />
-            <Link href={APP_ROUTES.PRICING}>
-              <Button variant="ghost">Back to Pricing</Button>
-            </Link>
+            {session?.user && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-800">
+                    {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
 
       <div className="container mx-auto px-4 py-12 max-w-4xl">
+        {session?.user && (
+          <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+            <p className="text-lg font-medium text-gray-800">
+              👋 Hello, {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}! Ready to restore your memories?
+            </p>
+          </div>
+        )}
+        
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Upload Your Photos</h1>
           <p className="text-gray-600">

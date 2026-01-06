@@ -4,8 +4,9 @@ import { getToken } from 'next-auth/jwt'
 import { rateLimit } from './lib/rate-limit'
 
 export async function middleware(request: NextRequest) {
-  // Apply rate limiting to API routes
-  if (request.nextUrl.pathname.startsWith('/api')) {
+  // Apply rate limiting to API routes (except NextAuth routes)
+  if (request.nextUrl.pathname.startsWith('/api') && 
+      !request.nextUrl.pathname.startsWith('/api/auth')) {
     const allowed = rateLimit(request);
     if (!allowed) {
       return NextResponse.json(

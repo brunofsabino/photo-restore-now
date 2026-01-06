@@ -1,12 +1,17 @@
+'use client';
+
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { APP_ROUTES } from '@/lib/constants';
-import { Sparkles, Clock, Shield, Heart, Star } from 'lucide-react';
+import { Sparkles, Clock, Shield, Heart, Star, User, LogOut } from 'lucide-react';
 import { CartButton } from '@/components/CartButton';
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 
 export default function HomePage() {
+  const { data: session, status } = useSession();
+  
   // Example restoration images (you'll replace these with real ones)
   const examples = [
     {
@@ -38,9 +43,11 @@ export default function HomePage() {
             <Link href={APP_ROUTES.PRICING} className="text-gray-600 hover:text-primary transition-colors font-medium">
               Pricing
             </Link>
-            <Link href={APP_ROUTES.DASHBOARD} className="text-gray-600 hover:text-primary transition-colors font-medium">
-              My Photos
-            </Link>
+            {status === 'authenticated' && (
+              <Link href={APP_ROUTES.DASHBOARD} className="text-gray-600 hover:text-primary transition-colors font-medium">
+                My Photos
+              </Link>
+            )}
             <Link href="#examples" className="text-gray-600 hover:text-primary transition-colors font-medium">
               Examples
             </Link>
@@ -50,9 +57,29 @@ export default function HomePage() {
           </div>
           <div className="flex items-center gap-4">
             <CartButton />
-            <Link href={APP_ROUTES.PRICING}>
-              <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">Get Started</Button>
-            </Link>
+            {status === 'authenticated' ? (
+              <div className="flex items-center gap-3">
+                <div className="hidden sm:flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-800">
+                    Hello, {session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  Logout
+                </Button>
+              </div>
+            ) : (
+              <Link href={APP_ROUTES.PRICING}>
+                <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">Get Started</Button>
+              </Link>
+            )}
           </div>
         </div>
       </nav>

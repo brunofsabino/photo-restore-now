@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { APP_ROUTES, PRICING_PACKAGES } from '@/lib/constants';
 import { formatPrice } from '@/lib/utils';
-import { Download, Image as ImageIcon, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Download, Image as ImageIcon, Clock, CheckCircle, XCircle, User, LogOut } from 'lucide-react';
 
 interface Order {
   id: string;
@@ -255,12 +255,31 @@ export default function DashboardPage() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            {session?.user && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-800">
+                    {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            )}
             <Link href={APP_ROUTES.PRICING}>
-              <Button variant="outline">Restore More Photos</Button>
+              <Button variant="outline" size="sm">Restore More Photos</Button>
             </Link>
             <Link href={APP_ROUTES.HOME}>
-              <Button variant="ghost">Home</Button>
+              <Button variant="ghost" size="sm">Home</Button>
             </Link>
           </div>
         </div>

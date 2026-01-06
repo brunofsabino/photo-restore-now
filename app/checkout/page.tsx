@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
@@ -10,9 +11,10 @@ import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { X } from 'lucide-react';
+import { X, ArrowLeft, User, LogOut } from 'lucide-react';
 import { StripePaymentForm } from '@/components/checkout/StripePaymentForm';
 import { CartButton } from '@/components/CartButton';
+import { signOut } from 'next-auth/react';
 
 // Initialize Stripe
 const stripePromise = loadStripe(
@@ -21,6 +23,7 @@ const stripePromise = loadStripe(
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const { data: session } = useSession();
   const { cart: cartState, clearCart, getTotalAmount, removeFromCart } = useCart();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -37,17 +40,22 @@ export default function CheckoutPage() {
     setStripeConfigured(!!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY && 
                         process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== 'pk_test_your_stripe_publishable_key');
     
-    // Check if user is coming as guest from sessionStorage
-    const guestCheckout = sessionStorage.getItem('guestCheckout');
-    if (guestCheckout) {
-      try {
-        const guestData = JSON.parse(guestCheckout);
-        setEmail(guestData.email || '');
-      } catch (e) {
-        console.error('Failed to parse guest data:', e);
+    // Auto-fill email if user is authenticated
+    if (session?.user?.email) {
+      setEmail(session.user.email);
+    } else {
+      // Check if user is coming as guest from sessionStorage
+      const guestCheckout = sessionStorage.getItem('guestCheckout');
+      if (guestCheckout) {
+        try {
+          const guestData = JSON.parse(guestCheckout);
+          setEmail(guestData.email || '');
+        } catch (e) {
+          console.error('Failed to parse guest data:', e);
+        }
       }
     }
-  }, []);
+  }, [session]);
 
   // Create object URLs for images and cleanup
   useEffect(() => {
@@ -87,7 +95,7 @@ export default function CheckoutPage() {
 
   // Create payment intent when email is set and Stripe is configured
   useEffect(() => {
-    if (!email || !stripeConfigured || clientSecret || cartState.items.length === 0) {
+    if (!email || !email.includes('@') || !stripeConfigured || clientSecret || cartState.items.length === 0) {
       return;
     }
 
@@ -112,9 +120,13 @@ export default function CheckoutPage() {
         if (response.ok) {
           const result = await response.json();
           setClientSecret(result.data.clientSecret);
+        } else {
+          console.error('Failed to create payment intent:', await response.text());
+          setError('Failed to initialize payment. Please try again.');
         }
       } catch (err) {
         console.error('Failed to create payment intent:', err);
+        setError('Failed to initialize payment. Please try again.');
       }
     };
 
@@ -169,11 +181,33 @@ export default function CheckoutPage() {
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold text-primary">
             PhotoRestoreNow
           </Link>
-          <div className="flex items-center gap-4">
-            <CartButton />
+          <div className="flex items-center gap-3">
             <Link href={APP_ROUTES.PRICING}>
-              <Button variant="ghost">Back to Pricing</Button>
+              <Button variant="ghost" size="sm" className="gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </Button>
             </Link>
+            <CartButton />
+            {session?.user && (
+              <>
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium text-gray-800">
+                    {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => signOut()}
+                  className="gap-2"
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            )}
           </div>
         </div>
       </nav>
@@ -293,33 +327,58 @@ export default function CheckoutPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={loading}
+                  readOnly={!!session?.user?.email}
+                  className={session?.user?.email ? 'bg-gray-50 cursor-not-allowed' : ''}
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Receipt and download links will be sent here
+                  {session?.user?.email 
+                    ? 'Using your authenticated account email'
+                    : 'Receipt and download links will be sent here'
+                  }
                 </p>
               </div>
 
               {/* Stripe Payment Section */}
-              {stripeConfigured && clientSecret ? (
-                <div className="border rounded-lg p-4 bg-white">
-                  <Elements 
-                    stripe={stripePromise} 
-                    options={{
-                      clientSecret,
-                      appearance: {
-                        theme: 'stripe',
-                        variables: {
-                          colorPrimary: '#3b82f6',
-                        },
-                      },
-                    }}
-                  >
-                    <StripePaymentForm 
-                      amount={total}
-                      onSuccess={handlePaymentSuccess}
-                    />
-                  </Elements>
-                </div>
+              {stripeConfigured ? (
+                email && email.includes('@') ? (
+                  clientSecret ? (
+                    <div className="border rounded-lg p-4 bg-white">
+                      <Elements 
+                        stripe={stripePromise} 
+                        options={{
+                          clientSecret,
+                          appearance: {
+                            theme: 'stripe',
+                            variables: {
+                              colorPrimary: '#3b82f6',
+                            },
+                          },
+                        }}
+                      >
+                        <StripePaymentForm 
+                          amount={total}
+                          onSuccess={handlePaymentSuccess}
+                        />
+                      </Elements>
+                    </div>
+                  ) : (
+                    <div className="border rounded-lg p-8 bg-white text-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                      <p className="text-gray-600">Preparing payment...</p>
+                      <p className="text-sm text-gray-500 mt-2">Please wait while we set up secure payment</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 bg-blue-50 text-center">
+                    <div className="text-blue-600 mb-2">
+                      <svg className="w-12 h-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                      </svg>
+                    </div>
+                    <p className="font-semibold text-blue-900 mb-1">Enter your email above</p>
+                    <p className="text-sm text-blue-700">Payment options will appear once you provide a valid email address</p>
+                  </div>
+                )
               ) : (
                 <>
                   {/* Placeholder when Stripe is not configured */}

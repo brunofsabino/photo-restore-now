@@ -13,7 +13,6 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   '/api/payment': { windowMs: 60000, maxRequests: 10 },  // 10 requests per minute
   '/api/files': { windowMs: 60000, maxRequests: 20 },    // 20 requests per minute
   '/api/jobs': { windowMs: 60000, maxRequests: 30 },     // 30 requests per minute
-  '/api/auth': { windowMs: 60000, maxRequests: 5 },      // 5 auth attempts per minute
 };
 
 export function rateLimit(req: NextRequest): boolean {
