@@ -7,9 +7,9 @@
  */
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { Cart, CartItem, PackageType } from '@/types';
+import { Cart, CartItem, PackageType, ServiceType } from '@/types';
 import { PRICING_PACKAGES } from '@/lib/constants';
-import { generateId, safeJsonParse } from '@/lib/utils';
+import { generateId, safeJsonParse, calculateServicePrice } from '@/lib/utils';
 import {
   saveFilesToStorage,
   getFilesFromStorage,
@@ -19,7 +19,7 @@ import {
 
 interface CartContextType {
   cart: Cart;
-  addToCart: (packageId: PackageType, images: File[]) => Promise<void>;
+  addToCart: (packageId: PackageType, serviceType: ServiceType, images: File[]) => Promise<void>;
   removeFromCart: (itemId: string) => Promise<void>;
   clearCart: () => Promise<void>;
   getTotalAmount: () => number;
@@ -62,9 +62,16 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
             console.log('Removed orphaned cart items without images');
           }
           
+          // Recalculate total amount based on current pricing (handles price updates)
+          const totalAmount = validItems.reduce((sum, item) => {
+            const pkg = PRICING_PACKAGES.find(p => p.id === item.packageId);
+            return sum + calculateServicePrice(pkg?.basePrice || 0, item.serviceType);
+          }, 0);
+          
           setCart({
             ...parsed,
             items: validItems,
+            totalAmount,
             totalImages: validItems.reduce((sum, item) => sum + item.images.length, 0),
           });
         } catch (e) {
@@ -89,7 +96,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cartToSave));
   }, [cart]);
 
-  const addToCart = async (packageId: PackageType, images: File[]) => {
+  const addToCart = async (packageId: PackageType, serviceType: ServiceType, images: File[]) => {
     const packageInfo = PRICING_PACKAGES.find(p => p.id === packageId);
     if (!packageInfo) return;
 
@@ -120,6 +127,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     const newItem: CartItem = {
       id: newItemId,
       packageId,
+      serviceType,
       images,
       addedAt: new Date(),
     };
@@ -130,7 +138,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const newItems = [...validPrevItems, newItem];
       const totalAmount = newItems.reduce((sum, item) => {
         const pkg = PRICING_PACKAGES.find(p => p.id === item.packageId);
-        return sum + (pkg?.price || 0);
+        return sum + calculateServicePrice(pkg?.basePrice || 0, item.serviceType);
       }, 0);
       const totalImages = newItems.reduce(
         (sum, item) => sum + item.images.length,

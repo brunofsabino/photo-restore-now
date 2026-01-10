@@ -9,11 +9,13 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useCart } from '@/contexts/CartContext';
-import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '@/lib/constants';
-import { formatPrice, formatFileSize, isValidFileType, isValidFileSize } from '@/lib/utils';
-import { PackageType } from '@/types';
+import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE, SERVICE_OPTIONS } from '@/lib/constants';
+import { formatPrice, formatFileSize, isValidFileType, isValidFileSize, calculateServicePrice, getServiceOption } from '@/lib/utils';
+import { readFile } from '@/lib/image-crop';
+import { PackageType, ServiceType } from '@/types';
 import { Upload, X, AlertCircle, User, LogOut } from 'lucide-react';
 import { CartButton } from '@/components/CartButton';
+import { ImageCropModal } from '@/components/ImageCropModal';
 
 function UploadPageContent() {
   const router = useRouter();
@@ -24,14 +26,29 @@ function UploadPageContent() {
   const { data: session, status } = useSession();
 
   const packageId = (searchParams.get('package') as PackageType) || '1-photo';
+  const serviceType = (searchParams.get('service') as ServiceType) || 'restoration';
   const packageInfo = PRICING_PACKAGES.find(p => p.id === packageId);
+  const serviceInfo = getServiceOption(serviceType);
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  
+  // Crop modal states
+  const [cropModalOpen, setCropModalOpen] = useState(false);
+  const [currentImageSrc, setCurrentImageSrc] = useState('');
+  const [currentFileName, setCurrentFileName] = useState('');
+  const [pendingFiles, setPendingFiles] = useState<File[]>([]);
+  const [currentFileIndex, setCurrentFileIndex] = useState(0);
+
+  // Redirect to service selection if no service specified
+  if (!searchParams.get('service')) {
+    router.push(`/select-service?package=${packageId}`);
+    return null;
+  }
 
   // Redirect to signin if not authenticated
   if (status === 'unauthenticated') {
-    router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent('/upload?package=' + packageId));
+    router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent(`/upload?package=${packageId}&service=${serviceType}`));
     return null;
   }
 
@@ -51,7 +68,7 @@ function UploadPageContent() {
     return <div>Package not found</div>;
   }
 
-  const handleFileSelect = (files: FileList | null) => {
+  const handleFileSelect = async (files: FileList | null) => {
     if (!files) return;
 
     const filesArray = Array.from(files);
@@ -89,7 +106,71 @@ function UploadPageContent() {
     }
 
     if (validFiles.length > 0) {
-      setSelectedFiles(prev => [...prev, ...validFiles]);
+      // Start crop flow with first image
+      setPendingFiles(validFiles);
+      setCurrentFileIndex(0);
+      await openCropModal(validFiles[0]);
+    }
+  };
+
+  const openCropModal = async (file: File) => {
+    try {
+      const imageSrc = await readFile(file);
+      setCurrentImageSrc(imageSrc);
+      setCurrentFileName(file.name);
+      setCropModalOpen(true);
+    } catch (error) {
+      console.error('Error reading file:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load image for cropping',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleCropComplete = async (croppedFile: File) => {
+    // Add cropped file to selected files
+    setSelectedFiles(prev => [...prev, croppedFile]);
+    
+    // Move to next file
+    const nextIndex = currentFileIndex + 1;
+    if (nextIndex < pendingFiles.length) {
+      setCurrentFileIndex(nextIndex);
+      await openCropModal(pendingFiles[nextIndex]);
+    } else {
+      // All files processed - close modal
+      setCropModalOpen(false);
+      setPendingFiles([]);
+      setCurrentFileIndex(0);
+      setCurrentImageSrc('');
+      setCurrentFileName('');
+      
+      toast({
+        title: 'Success',
+        description: `${pendingFiles.length} photo${pendingFiles.length > 1 ? 's' : ''} cropped and ready!`,
+      });
+    }
+  };
+
+  const handleCropCancel = () => {
+    setCropModalOpen(false);
+    
+    // Se cancelar, remove apenas as fotos pendentes
+    // Mantém as fotos já cropadas
+    const cancelledCount = pendingFiles.length - currentFileIndex;
+    
+    setPendingFiles([]);
+    setCurrentFileIndex(0);
+    setCurrentImageSrc('');
+    setCurrentFileName('');
+    
+    if (cancelledCount > 0) {
+      toast({
+        title: 'Upload Cancelled',
+        description: `${cancelledCount} photo${cancelledCount > 1 ? 's' : ''} not uploaded. ${selectedFiles.length} photo${selectedFiles.length !== 1 ? 's' : ''} already added.`,
+        variant: 'destructive',
+      });
     }
   };
 
@@ -113,7 +194,17 @@ function UploadPageContent() {
       return;
     }
 
-    await addToCart(packageId, selectedFiles);
+    // Validate exact number of photos
+    if (selectedFiles.length !== packageInfo.photoCount) {
+      toast({
+        title: 'Incorrect Number of Photos',
+        description: `You selected the ${packageInfo.name} which requires exactly ${packageInfo.photoCount} photo${packageInfo.photoCount > 1 ? 's' : ''}. You have ${selectedFiles.length} photo${selectedFiles.length > 1 ? 's' : ''}.`,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    await addToCart(packageId, serviceType, selectedFiles);
     router.push(APP_ROUTES.CHECKOUT);
   };
 
@@ -161,9 +252,14 @@ function UploadPageContent() {
         
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold mb-2">Upload Your Photos</h1>
-          <p className="text-gray-600">
-            Selected Package: <span className="font-semibold">{packageInfo.name}</span> - {formatPrice(packageInfo.price)}
-          </p>
+          <div className="space-y-1">
+            <p className="text-gray-600">
+              <span className="font-semibold">{packageInfo.name}</span> - {packageInfo.photoCount} {packageInfo.photoCount === 1 ? 'Photo' : 'Photos'}
+            </p>
+            <p className="text-gray-600">
+              Service: <span className="font-semibold">{serviceInfo?.icon} {serviceInfo?.name}</span> - {formatPrice(calculateServicePrice(packageInfo.basePrice, serviceType))}
+            </p>
+          </div>
         </div>
 
         <Card className="mb-6">
@@ -213,9 +309,22 @@ function UploadPageContent() {
             {/* Selected Files */}
             {selectedFiles.length > 0 && (
               <div className="mt-6">
-                <h3 className="font-semibold mb-3">
-                  Selected Photos ({selectedFiles.length}/{packageInfo.photoCount})
-                </h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold">
+                    Selected Photos ({selectedFiles.length}/{packageInfo.photoCount})
+                  </h3>
+                  {selectedFiles.length !== packageInfo.photoCount && (
+                    <span className={`text-sm font-medium ${
+                      selectedFiles.length < packageInfo.photoCount 
+                        ? 'text-orange-600' 
+                        : 'text-red-600'
+                    }`}>
+                      {selectedFiles.length < packageInfo.photoCount 
+                        ? `${packageInfo.photoCount - selectedFiles.length} more needed` 
+                        : `${selectedFiles.length - packageInfo.photoCount} too many`}
+                    </span>
+                  )}
+                </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
                   {selectedFiles.map((file, index) => (
                     <div
@@ -270,14 +379,26 @@ function UploadPageContent() {
             </Link>
             <Button
               onClick={handleContinue}
-              disabled={selectedFiles.length === 0}
+              disabled={selectedFiles.length !== packageInfo.photoCount}
               size="lg"
+              className={selectedFiles.length === packageInfo.photoCount ? 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700' : ''}
             >
               Continue to Checkout
             </Button>
           </CardFooter>
         </Card>
       </div>
+
+      {/* Image Crop Modal */}
+      <ImageCropModal
+        isOpen={cropModalOpen}
+        onClose={handleCropCancel}
+        imageSrc={currentImageSrc}
+        fileName={currentFileName}
+        onCropComplete={handleCropComplete}
+        currentIndex={currentFileIndex}
+        totalImages={pendingFiles.length}
+      />
     </div>
   );
 }

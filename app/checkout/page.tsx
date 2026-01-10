@@ -8,6 +8,7 @@ import { Elements } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useCart } from '@/contexts/CartContext';
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
+import { calculateServicePrice, getServiceOption } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -225,7 +226,8 @@ export default function CheckoutPage() {
             <CardContent className="space-y-4">
               {cartState.items.filter(item => item.images.length > 0).map((item) => {
                 const pkg = PRICING_PACKAGES.find(p => p.id === item.packageId);
-                const itemPrice = pkg?.price || 0;
+                const serviceInfo = getServiceOption(item.serviceType);
+                const itemPrice = calculateServicePrice(pkg?.basePrice || 0, item.serviceType);
                 
                 return (
                   <div key={item.id} className="border-b pb-4 last:border-b-0">
@@ -234,6 +236,9 @@ export default function CheckoutPage() {
                         <p className="font-medium">{pkg?.name || item.packageId}</p>
                         <p className="text-sm text-gray-600">
                           {item.images.length} photo{item.images.length > 1 ? 's' : ''}
+                        </p>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {serviceInfo?.icon} {serviceInfo?.name}
                         </p>
                       </div>
                       <div className="flex items-center gap-3">

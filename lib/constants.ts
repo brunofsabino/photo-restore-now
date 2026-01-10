@@ -2,7 +2,36 @@
  * Constants and Configuration
  */
 
-import { PricingPackage } from '@/types';
+import { PricingPackage, ServiceOption } from '@/types';
+
+// ============================================
+// SERVICE OPTIONS
+// ============================================
+
+export const SERVICE_OPTIONS: ServiceOption[] = [
+  {
+    id: 'restoration',
+    name: 'Restoration Only',
+    description: 'Fix scratches, tears, and damage. Perfect for damaged photos that are already in color.',
+    icon: '🔧',
+    priceMultiplier: 1.0, // Base price
+  },
+  {
+    id: 'colorization',
+    name: 'Colorization Only',
+    description: 'Add vibrant colors to black & white photos. Best for undamaged vintage photos.',
+    icon: '🎨',
+    priceMultiplier: 0.5, // 50% of base price
+  },
+  {
+    id: 'restoration-colorization',
+    name: 'Restoration + Colorization',
+    description: 'Complete transformation: fix damage AND add colors. Best for old damaged B&W photos.',
+    icon: '⭐',
+    priceMultiplier: 1.6, // 60% premium (combo discount)
+    popular: true,
+  },
+];
 
 // ============================================
 // PRICING PACKAGES
@@ -13,9 +42,9 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '1-photo',
     name: 'Basic Package',
     photoCount: 1,
-    price: 999, // $9.99
+    basePrice: 999, // $9.99 (restoration base price)
     features: [
-      'AI-powered restoration',
+      'AI-powered processing',
       'Sharpness correction',
       'Noise removal',
       'Digital download',
@@ -27,7 +56,7 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '3-photos',
     name: 'Family Package',
     photoCount: 3,
-    price: 2499, // $24.99
+    basePrice: 2499, // $24.99
     popular: true,
     features: [
       'Everything in Basic',
@@ -42,7 +71,7 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '5-photos',
     name: 'Memories Package',
     photoCount: 5,
-    price: 3999, // $39.99
+    basePrice: 3999, // $39.99
     features: [
       'Everything in Family',
       '~$8.00 per photo',
@@ -56,7 +85,7 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '10-photos',
     name: 'Heritage Package',
     photoCount: 10,
-    price: 6999, // $69.99
+    basePrice: 6999, // $69.99
     badge: 'Premium',
     features: [
       'Everything in Memories',

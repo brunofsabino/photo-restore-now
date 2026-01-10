@@ -8,11 +8,22 @@
 
 export type PackageType = '1-photo' | '3-photos' | '5-photos' | '10-photos';
 
+export type ServiceType = 'restoration' | 'colorization' | 'restoration-colorization';
+
+export interface ServiceOption {
+  id: ServiceType;
+  name: string;
+  description: string;
+  icon: string;
+  priceMultiplier: number; // 1.0 = base price, 1.5 = +50%, etc
+  popular?: boolean;
+}
+
 export interface PricingPackage {
   id: PackageType;
   name: string;
   photoCount: number;
-  price: number; // in cents
+  basePrice: number; // in cents (base price for restoration only)
   popular?: boolean;
   badge?: string;
   features: string[];
@@ -45,6 +56,7 @@ export interface RestorationJob {
   userId?: string; // Optional for guest users
   email: string;
   packageId: PackageType;
+  serviceType: ServiceType;
   images: ImageFile[];
   status: ImageStatus;
   paymentIntentId?: string;
@@ -115,6 +127,7 @@ export interface ImageRestorationProvider {
 export interface CartItem {
   id: string;
   packageId: PackageType;
+  serviceType: ServiceType;
   images: File[];
   addedAt: Date;
 }

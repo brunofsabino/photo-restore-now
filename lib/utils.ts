@@ -1,5 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
+import { ServiceType } from '@/types';
+import { SERVICE_OPTIONS } from '@/lib/constants';
 
 /**
  * Utility to merge Tailwind classes
@@ -16,6 +18,22 @@ export function formatPrice(amountInCents: number): string {
     style: 'currency',
     currency: 'USD',
   }).format(amountInCents / 100);
+}
+
+/**
+ * Calculate price based on service type
+ */
+export function calculateServicePrice(basePrice: number, serviceType: ServiceType): number {
+  const service = SERVICE_OPTIONS.find(s => s.id === serviceType);
+  if (!service) return basePrice;
+  return Math.round(basePrice * service.priceMultiplier);
+}
+
+/**
+ * Get service option details
+ */
+export function getServiceOption(serviceType: ServiceType) {
+  return SERVICE_OPTIONS.find(s => s.id === serviceType);
 }
 
 /**

@@ -7,7 +7,7 @@ import { useSession, signOut } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
-import { formatPrice } from '@/lib/utils';
+import { formatPrice, calculateServicePrice } from '@/lib/utils';
 import { Check, User, LogOut } from 'lucide-react';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { CartButton } from '@/components/CartButton';
@@ -29,17 +29,17 @@ export default function PricingPage() {
   const handleChoosePackage = (packageId: string) => {
     setSelectedPackage(packageId);
     
-    // If user is already authenticated (guest, Google, or Facebook), go directly to upload
+    // If user is already authenticated (guest, Google, or Facebook), go to service selection
     if (isAuthenticated) {
-      router.push(`${APP_ROUTES.UPLOAD}?package=${packageId}`);
+      router.push(`/select-service?package=${packageId}`);
     } else {
       setShowSignInModal(true);
     }
   };
 
   const callbackUrl = selectedPackage 
-    ? `${APP_ROUTES.UPLOAD}?package=${selectedPackage}` 
-    : APP_ROUTES.UPLOAD;
+    ? `/select-service?package=${selectedPackage}` 
+    : '/select-service';
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
@@ -115,11 +115,19 @@ export default function PricingPage() {
               <CardHeader className="text-center pb-8">
                 <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
                 <div className="mb-2">
-                  <span className="text-4xl font-bold">{formatPrice(pkg.price)}</span>
+                  <span className="text-3xl font-bold">{formatPrice(pkg.basePrice)}</span>
+                  <span className="text-gray-500 text-sm ml-1">starting at</span>
                 </div>
-                <CardDescription className="text-lg">
+                <CardDescription className="text-base">
                   {pkg.photoCount} {pkg.photoCount === 1 ? 'Photo' : 'Photos'}
                 </CardDescription>
+                <div className="mt-4 pt-4 border-t border-gray-100">
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <div>Restoration: {formatPrice(pkg.basePrice)}</div>
+                    <div>Colorization: {formatPrice(calculateServicePrice(pkg.basePrice, 'colorization'))}</div>
+                    <div>Both: {formatPrice(calculateServicePrice(pkg.basePrice, 'restoration-colorization'))}</div>
+                  </div>
+                </div>
               </CardHeader>
 
               <CardContent>
