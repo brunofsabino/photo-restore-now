@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, Mail, Download, Home } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { SiteLayout } from '@/components/SiteLayout';
 
 export default function PaymentSuccessPage() {
   const searchParams = useSearchParams();
@@ -22,8 +23,9 @@ export default function PaymentSuccessPage() {
   }, [searchParams]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
-      <Card className="max-w-2xl w-full shadow-2xl">
+    <SiteLayout>
+      <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4 py-20">
+        <Card className="max-w-2xl w-full shadow-2xl">
         <CardHeader className="text-center space-y-4 pb-8">
           <div className="flex justify-center">
             <div className="rounded-full bg-green-100 p-6">
@@ -124,5 +126,6 @@ export default function PaymentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+    </SiteLayout>
   );
 }

@@ -334,7 +334,63 @@ export default function DashboardPage() {
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <div className="flex items-center justify-between">
+                  {/* Original Photos Section */}
+                  {order.originalFiles && order.originalFiles.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-sm mb-3 text-gray-700">Original Photos</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {order.originalFiles.map((fileUrl, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-gray-200 hover:border-blue-500 transition-colors group">
+                            <img 
+                              src={fileUrl} 
+                              alt={`Original photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                            <div className="absolute top-2 left-2 bg-black/70 text-white text-xs px-2 py-1 rounded">
+                              Original {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Restored Photos Section */}
+                  {order.status === 'completed' && order.restoredFiles && order.restoredFiles.length > 0 && (
+                    <div className="mb-6">
+                      <h4 className="font-semibold text-sm mb-3 text-gray-700 flex items-center gap-2">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                        Restored Photos
+                      </h4>
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        {order.restoredFiles.map((fileUrl, index) => (
+                          <div key={index} className="relative aspect-square rounded-lg overflow-hidden border-2 border-green-500 hover:border-green-600 transition-colors group">
+                            <img 
+                              src={fileUrl} 
+                              alt={`Restored photo ${index + 1}`}
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                            <div className="absolute top-2 left-2 bg-green-500 text-white text-xs px-2 py-1 rounded font-medium">
+                              ✨ Restored {index + 1}
+                            </div>
+                            <a
+                              href={fileUrl}
+                              download
+                              className="absolute bottom-2 right-2 bg-white/90 hover:bg-white p-2 rounded-full shadow-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <Download className="h-4 w-4 text-gray-700" />
+                            </a>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Status Info */}
+                  <div className="flex items-center justify-between pt-4 border-t">
                     <div className="flex items-center gap-2 text-sm text-gray-600">
                       <ImageIcon className="h-4 w-4" />
                       <span>{order.photoCount} {order.photoCount === 1 ? 'photo' : 'photos'}</span>

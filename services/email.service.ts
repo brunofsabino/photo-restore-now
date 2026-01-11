@@ -14,7 +14,8 @@ if (!process.env.RESEND_API_KEY) {
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
-const fromEmail = process.env.RESEND_FROM_EMAIL || 'noreply@photorestorenow.com';
+const fromEmailAddress = process.env.RESEND_FROM_EMAIL || 'noreply@photorestorenow.com';
+const fromEmail = `PhotoRestoreNow <${fromEmailAddress}>`;
 
 /**
  * Send a generic email
@@ -47,10 +48,19 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 export async function sendOrderConfirmation(
   email: string,
   orderId: string,
-  packageName: string,
+  packageId: string,
   photoCount: number,
   amount: number
 ): Promise<boolean> {
+  // Map package IDs to friendly names
+  const packageNames: Record<string, string> = {
+    '1-photo': 'Basic Package',
+    '5-photos': 'Standard Package',
+    '3-photos': 'Family Package',
+    '10-photos': 'Album Package',
+  };
+  const packageName = packageNames[packageId] || packageId;
+
   const html = `
     <!DOCTYPE html>
     <html>

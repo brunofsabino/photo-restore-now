@@ -61,9 +61,12 @@ export async function POST(request: NextRequest) {
               userId: user?.id,
               email,
               packageId: paymentIntent.metadata.packageId || '1-photo',
-              totalAmount: paymentIntent.amount,
+              amount: paymentIntent.amount,
               paymentIntentId: paymentIntent.id,
-              status: 'pending',
+              status: 'processing',
+              photoCount: parseInt(paymentIntent.metadata.imageCount || '1'),
+              originalFiles: [],
+              restoredFiles: [],
             },
           });
 
@@ -73,15 +76,13 @@ export async function POST(request: NextRequest) {
             amount: paymentIntent.amount,
           });
 
-          // Send confirmation email
+          // Send confirmation email with individual parameters
           await sendOrderConfirmation(
             email,
-            {
-              orderId: order.id,
-              packageId: order.packageId,
-              amount: order.totalAmount,
-              photoCount: parseInt(paymentIntent.metadata.imageCount || '1'),
-            }
+            order.id,
+            order.packageId,
+            order.photoCount,
+            order.amount
           );
 
           logger.info('Confirmation email sent', { orderId: order.id, email });

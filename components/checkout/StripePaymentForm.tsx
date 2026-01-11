@@ -45,6 +45,8 @@ export function StripePaymentForm({ amount, onSuccess }: StripePaymentFormProps)
           title: "Payment Successful!",
           description: "Your order has been confirmed.",
         })
+        // Clear cart before redirect
+        onSuccess();
         // Redirect to success page
         window.location.href = `/payment/success?payment_intent=${paymentIntent.id}`;
       }
