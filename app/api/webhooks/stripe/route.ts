@@ -6,7 +6,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { verifyStripeWebhook } from '@/lib/webhook-verification';
 import { logger } from '@/lib/logger';
+import { sendOrderConfirmation } from '@/services/email.service';
+import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
+
+const prisma = new PrismaClient();
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,16 +42,52 @@ export async function POST(request: NextRequest) {
           email: paymentIntent.receipt_email,
         });
 
-        // TODO: Trigger job processing
-        // This is where you'd create a restoration job
-        // Example:
-        // await createJob(
-        //   paymentIntent.receipt_email!,
-        //   paymentIntent.metadata.packageId,
-        //   images, // You'd need to retrieve these
-        //   paymentIntent.id,
-        //   paymentIntent.amount
-        // );
+        try {
+          // Create order in database
+          const email = paymentIntent.receipt_email || paymentIntent.metadata.email;
+          if (!email) {
+            logger.error('No email found in payment intent', { paymentIntentId: paymentIntent.id });
+            break;
+          }
+
+          // Find user by email (might be null for guest checkout)
+          const user = await prisma.user.findUnique({
+            where: { email },
+          });
+
+          // Create order
+          const order = await prisma.order.create({
+            data: {
+              userId: user?.id,
+              email,
+              packageId: paymentIntent.metadata.packageId || '1-photo',
+              totalAmount: paymentIntent.amount,
+              paymentIntentId: paymentIntent.id,
+              status: 'pending',
+            },
+          });
+
+          logger.info('Order created from webhook', {
+            orderId: order.id,
+            email,
+            amount: paymentIntent.amount,
+          });
+
+          // Send confirmation email
+          await sendOrderConfirmation(
+            email,
+            {
+              orderId: order.id,
+              packageId: order.packageId,
+              amount: order.totalAmount,
+              photoCount: parseInt(paymentIntent.metadata.imageCount || '1'),
+            }
+          );
+
+          logger.info('Confirmation email sent', { orderId: order.id, email });
+        } catch (error) {
+          logger.error('Error processing payment_intent.succeeded', error as Error);
+        }
         
         break;
       }

@@ -253,6 +253,120 @@ export async function sendRestorationFailed(
 }
 
 /**
+ * Send welcome email to new users
+ */
+export async function sendWelcomeEmail(
+  email: string,
+  name?: string | null
+): Promise<boolean> {
+  const displayName = name || 'there';
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body style="margin: 0; padding: 0; background-color: #f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f3f4f6; padding: 40px 20px;">
+        <tr>
+          <td align="center">
+            <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+              <!-- Header -->
+              <tr>
+                <td style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); padding: 40px 30px; text-align: center;">
+                  <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700;">✨ PhotoRestoreNow</h1>
+                  <p style="margin: 10px 0 0 0; color: #ede9fe; font-size: 16px;">Welcome to Your Photo Restoration Journey!</p>
+                </td>
+              </tr>
+              
+              <!-- Welcome Icon -->
+              <tr>
+                <td style="padding: 30px 30px 20px; text-align: center;">
+                  <table width="80" height="80" cellpadding="0" cellspacing="0" style="background-color: #8b5cf6; border-radius: 50%; margin: 0 auto;">
+                    <tr>
+                      <td align="center" valign="middle" style="color: #ffffff; font-size: 48px; line-height: 80px;">👋</td>
+                    </tr>
+                  </table>
+                </td>
+              </tr>
+              
+              <!-- Content -->
+              <tr>
+                <td style="padding: 0 40px 30px;">
+                  <h2 style="margin: 0 0 20px; color: #111827; font-size: 22px; text-align: center;">Welcome ${displayName}!</h2>
+                  <p style="margin: 0 0 20px; color: #6b7280; font-size: 16px; line-height: 1.6;">
+                    Thank you for joining PhotoRestoreNow! We're excited to help you bring your precious memories back to life with the power of AI.
+                  </p>
+                  
+                  <!-- Features Box -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #faf5ff; border-radius: 8px; margin: 25px 0;">
+                    <tr>
+                      <td style="padding: 25px;">
+                        <p style="margin: 0 0 15px; color: #111827; font-size: 16px; font-weight: 600;">What You Can Do:</p>
+                        <table width="100%" cellpadding="8" cellspacing="0">
+                          <tr>
+                            <td style="color: #8b5cf6; font-size: 20px; width: 30px;">📸</td>
+                            <td style="color: #4b5563; font-size: 14px; line-height: 1.6;">Restore old and damaged photos with AI</td>
+                          </tr>
+                          <tr>
+                            <td style="color: #8b5cf6; font-size: 20px; width: 30px;">🎨</td>
+                            <td style="color: #4b5563; font-size: 14px; line-height: 1.6;">Colorize black & white memories</td>
+                          </tr>
+                          <tr>
+                            <td style="color: #8b5cf6; font-size: 20px; width: 30px;">⚡</td>
+                            <td style="color: #4b5563; font-size: 14px; line-height: 1.6;">Fast processing in under 24 hours</td>
+                          </tr>
+                          <tr>
+                            <td style="color: #8b5cf6; font-size: 20px; width: 30px;">💾</td>
+                            <td style="color: #4b5563; font-size: 14px; line-height: 1.6;">Download high-quality restored images</td>
+                          </tr>
+                        </table>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <!-- CTA Button -->
+                  <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
+                    <tr>
+                      <td align="center">
+                        <a href="${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/upload" 
+                           style="display: inline-block; background-color: #8b5cf6; color: #ffffff; font-size: 16px; font-weight: 600; text-decoration: none; padding: 14px 32px; border-radius: 8px; box-shadow: 0 4px 6px rgba(139, 92, 246, 0.3);">
+                          Start Restoring Photos
+                        </a>
+                      </td>
+                    </tr>
+                  </table>
+                  
+                  <p style="margin: 20px 0 0; color: #9ca3af; font-size: 14px; text-align: center; line-height: 1.6;">
+                    Need help? Contact us at <a href="mailto:support@photorestorenow.com" style="color: #8b5cf6; text-decoration: none;">support@photorestorenow.com</a>
+                  </p>
+                </td>
+              </tr>
+              
+              <!-- Footer -->
+              <tr>
+                <td style="background-color: #f9fafb; padding: 30px 40px; text-align: center; border-top: 1px solid #e5e7eb;">
+                  <p style="margin: 0 0 10px; color: #6b7280; font-size: 14px;">You're receiving this because you created an account with PhotoRestoreNow</p>
+                  <p style="margin: 0; color: #9ca3af; font-size: 12px;">© 2026 PhotoRestoreNow. All rights reserved.</p>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </body>
+    </html>
+  `;
+
+  return sendEmail({
+    to: email,
+    subject: '👋 Welcome to PhotoRestoreNow!',
+    html,
+  });
+}
+
+/**
  * Email service object for convenient imports
  */
 export const emailService = {
@@ -260,4 +374,5 @@ export const emailService = {
   sendOrderConfirmation,
   sendRestorationComplete,
   sendRestorationFailed,
+  sendWelcomeEmail,
 };

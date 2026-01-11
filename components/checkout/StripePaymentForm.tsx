@@ -28,11 +28,8 @@ export function StripePaymentForm({ amount, onSuccess }: StripePaymentFormProps)
     setErrorMessage(null)
 
     try {
-      const { error } = await stripe.confirmPayment({
+      const { error, paymentIntent } = await stripe.confirmPayment({
         elements,
-        confirmParams: {
-          return_url: `${window.location.origin}/payment/success`,
-        },
         redirect: 'if_required',
       })
 
@@ -43,12 +40,13 @@ export function StripePaymentForm({ amount, onSuccess }: StripePaymentFormProps)
           description: error.message,
           variant: "destructive",
         })
-      } else {
+      } else if (paymentIntent && paymentIntent.status === 'succeeded') {
         toast({
           title: "Payment Successful!",
           description: "Your order has been confirmed.",
         })
-        onSuccess()
+        // Redirect to success page
+        window.location.href = `/payment/success?payment_intent=${paymentIntent.id}`;
       }
     } catch (err) {
       setErrorMessage('An unexpected error occurred')

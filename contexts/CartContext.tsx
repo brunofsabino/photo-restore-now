@@ -4,9 +4,11 @@
  * Shopping Cart Context
  * 
  * Manages cart state with persistence using localStorage + IndexedDB
+ * Automatically clears cart when user logs out
  */
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
+import { useSession } from 'next-auth/react';
 import { Cart, CartItem, PackageType, ServiceType } from '@/types';
 import { PRICING_PACKAGES } from '@/lib/constants';
 import { generateId, safeJsonParse, calculateServicePrice } from '@/lib/utils';
@@ -30,11 +32,45 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_STORAGE_KEY = 'photo-restore-cart';
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const previousSessionRef = useRef<string | null>(null);
+  
   const [cart, setCart] = useState<Cart>({
     items: [],
     totalAmount: 0,
     totalImages: 0,
   });
+
+  // Define clearCart with useCallback first
+  const clearCart = useCallback(async () => {
+    console.log('Clearing cart...');
+    // Clear files from IndexedDB
+    await clearAllFilesFromStorage();
+    
+    setCart({
+      items: [],
+      totalAmount: 0,
+      totalImages: 0,
+    });
+    localStorage.removeItem(CART_STORAGE_KEY);
+  }, []);
+
+  // Monitor session changes to detect logout
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    const currentUserId = session?.user?.id || null;
+    const previousUserId = previousSessionRef.current;
+
+    // User logged out (was logged in, now not)
+    if (previousUserId && !currentUserId) {
+      console.log('User logged out - clearing cart');
+      clearCart();
+    }
+
+    // Update ref with current session
+    previousSessionRef.current = currentUserId;
+  }, [session, status, clearCart]);
 
   // Load cart from localStorage + IndexedDB on mount
   useEffect(() => {
@@ -174,18 +210,6 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
         totalImages,
       };
     });
-  };
-
-  const clearCart = async () => {
-    // Clear files from IndexedDB
-    await clearAllFilesFromStorage();
-    
-    setCart({
-      items: [],
-      totalAmount: 0,
-      totalImages: 0,
-    });
-    localStorage.removeItem(CART_STORAGE_KEY);
   };
 
   const getTotalAmount = () => cart.totalAmount;

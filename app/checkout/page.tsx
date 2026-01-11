@@ -24,7 +24,7 @@ const stripePromise = loadStripe(
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { cart: cartState, clearCart, getTotalAmount, removeFromCart } = useCart();
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -33,6 +33,15 @@ export default function CheckoutPage() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [stripeConfigured, setStripeConfigured] = useState(false);
   const [imageUrls, setImageUrls] = useState<Map<string, string[]>>(new Map());
+  const [wasAuthenticated, setWasAuthenticated] = useState(false);
+
+  const handleSignOut = async () => {
+    // Clear cart before signing out
+    await clearCart();
+    // Sign out and redirect to home
+    await signOut({ redirect: false });
+    router.push('/');
+  };
 
   useEffect(() => {
     setMounted(true);
@@ -44,6 +53,7 @@ export default function CheckoutPage() {
     // Auto-fill email if user is authenticated
     if (session?.user?.email) {
       setEmail(session.user.email);
+      setWasAuthenticated(true);
     } else {
       // Check if user is coming as guest from sessionStorage
       const guestCheckout = sessionStorage.getItem('guestCheckout');
@@ -57,6 +67,17 @@ export default function CheckoutPage() {
       }
     }
   }, [session]);
+
+  // Detect logout and redirect to home
+  useEffect(() => {
+    if (status === 'loading') return;
+    
+    // User was authenticated but now is not (logged out)
+    if (wasAuthenticated && !session?.user) {
+      console.log('User logged out from checkout - redirecting to home');
+      router.push('/');
+    }
+  }, [session, status, wasAuthenticated, router]);
 
   // Create object URLs for images and cleanup
   useEffect(() => {
@@ -157,7 +178,7 @@ export default function CheckoutPage() {
 
   const handlePaymentSuccess = () => {
     clearCart();
-    router.push('/');
+    router.push('/payment/success');
   };
 
   if (!mounted || cartState.items.length === 0) {
@@ -201,7 +222,7 @@ export default function CheckoutPage() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => signOut()}
+                  onClick={handleSignOut}
                   className="gap-2"
                 >
                   <LogOut className="h-4 w-4" />

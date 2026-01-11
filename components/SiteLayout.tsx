@@ -2,17 +2,29 @@
 
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { APP_ROUTES } from '@/lib/constants';
 import { CartButton } from '@/components/CartButton';
+import { useCart } from '@/contexts/CartContext';
 import { User, LogOut } from 'lucide-react';
 
 interface SiteLayoutProps {
-  children: React.ReactNode;
+  children: React.NodeNode;
 }
 
 export function SiteLayout({ children }: SiteLayoutProps) {
   const { data: session, status } = useSession();
+  const router = useRouter();
+  const { clearCart } = useCart();
+
+  const handleSignOut = async () => {
+    // Clear cart before signing out
+    await clearCart();
+    // Sign out and redirect to home
+    await signOut({ redirect: false });
+    router.push('/');
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
@@ -51,7 +63,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => signOut()}
+                  onClick={handleSignOut}
                   className="gap-2"
                 >
                   <LogOut className="h-4 w-4" />

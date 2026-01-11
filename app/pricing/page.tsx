@@ -11,6 +11,7 @@ import { formatPrice, calculateServicePrice } from '@/lib/utils';
 import { Check, User, LogOut } from 'lucide-react';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { CartButton } from '@/components/CartButton';
+import { FadeIn } from '@/components/animations/FadeIn';
 
 export default function PricingPage() {
   const router = useRouter();
@@ -87,79 +88,84 @@ export default function PricingPage() {
 
       {/* Pricing Section */}
       <section className="container mx-auto px-4 py-20">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
-            Simple, Transparent Pricing
-          </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Choose the package that best fits your needs. All packages include the same professional AI restoration quality.
-          </p>
-        </div>
+        <FadeIn direction="up">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Simple, Transparent Pricing
+            </h1>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Choose the package that best fits your needs. All packages include the same professional AI restoration quality.
+            </p>
+          </div>
+        </FadeIn>
 
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {PRICING_PACKAGES.map((pkg) => (
-            <Card
-              key={pkg.id}
-              className={`relative ${
-                pkg.popular
-                  ? 'border-primary shadow-xl scale-105'
-                  : 'border-gray-200'
-              }`}
-            >
-              {pkg.popular && (
-                <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">
-                  Most Popular
-                </div>
-              )}
-
-              <CardHeader className="text-center pb-8">
-                <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
-                <div className="mb-2">
-                  <span className="text-3xl font-bold">{formatPrice(pkg.basePrice)}</span>
-                  <span className="text-gray-500 text-sm ml-1">starting at</span>
-                </div>
-                <CardDescription className="text-base">
-                  {pkg.photoCount} {pkg.photoCount === 1 ? 'Photo' : 'Photos'}
-                </CardDescription>
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <div className="text-xs text-gray-500 space-y-1">
-                    <div>Restoration: {formatPrice(pkg.basePrice)}</div>
-                    <div>Colorization: {formatPrice(calculateServicePrice(pkg.basePrice, 'colorization'))}</div>
-                    <div>Both: {formatPrice(calculateServicePrice(pkg.basePrice, 'restoration-colorization'))}</div>
+          {PRICING_PACKAGES.map((pkg, index) => (
+            <FadeIn key={pkg.id} direction="up" delay={index * 0.1}>
+              <Card
+                className={`relative hover-lift ${
+                  pkg.popular
+                    ? 'border-primary shadow-xl scale-105'
+                    : 'border-gray-200'
+                }`}
+              >
+                {pkg.popular && (
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 bg-primary text-white px-4 py-1 rounded-full text-sm font-medium">
+                    Most Popular
                   </div>
-                </div>
-              </CardHeader>
+                )}
 
-              <CardContent>
-                <ul className="space-y-3">
-                  {pkg.features.map((feature, index) => (
-                    <li key={index} className="flex items-start gap-3">
-                      <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
-                      <span className="text-gray-600">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
+                <CardHeader className="text-center pb-8">
+                  <CardTitle className="text-2xl mb-2">{pkg.name}</CardTitle>
+                  <div className="mb-2">
+                    <span className="text-3xl font-bold">{formatPrice(pkg.basePrice)}</span>
+                    <span className="text-gray-500 text-sm ml-1">starting at</span>
+                  </div>
+                  <CardDescription className="text-base">
+                    {pkg.photoCount} {pkg.photoCount === 1 ? 'Photo' : 'Photos'}
+                  </CardDescription>
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="text-xs text-gray-500 space-y-1">
+                      <div>Restoration: {formatPrice(pkg.basePrice)}</div>
+                      <div>Colorization: {formatPrice(calculateServicePrice(pkg.basePrice, 'colorization'))}</div>
+                      <div>Both: {formatPrice(calculateServicePrice(pkg.basePrice, 'restoration-colorization'))}</div>
+                    </div>
+                  </div>
+                </CardHeader>
 
-              <CardFooter>
-                <Button
-                  onClick={() => handleChoosePackage(pkg.id)}
-                  className="w-full"
-                  size="lg"
-                  variant={pkg.popular ? 'default' : 'outline'}
-                >
-                  Choose {pkg.name}
-                </Button>
-              </CardFooter>
-            </Card>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {pkg.features.map((feature, featureIndex) => (
+                      <li key={featureIndex} className="flex items-start gap-3">
+                        <Check className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" />
+                        <span className="text-gray-600">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+
+                <CardFooter>
+                  <Button
+                    onClick={() => handleChoosePackage(pkg.id)}
+                    className="w-full"
+                    size="lg"
+                    variant={pkg.popular ? 'default' : 'outline'}
+                  >
+                    Choose {pkg.name}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </FadeIn>
           ))}
         </div>
 
         {/* FAQ Section */}
         <div className="mt-20 max-w-3xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-8">
-            Frequently Asked Questions
-          </h2>
+          <FadeIn direction="up">
+            <h2 className="text-3xl font-bold text-center mb-8">
+              Frequently Asked Questions
+            </h2>
+          </FadeIn>
           <div className="space-y-6">
             {[
               {
@@ -183,14 +189,16 @@ export default function PricingPage() {
                 a: 'Absolutely. Your photos are automatically deleted from our servers 7 days after delivery. We never share your photos with anyone.',
               },
             ].map((faq, index) => (
-              <Card key={index}>
-                <CardHeader>
-                  <CardTitle className="text-lg">{faq.q}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-gray-600">{faq.a}</p>
-                </CardContent>
-              </Card>
+              <FadeIn key={index} direction="up" delay={index * 0.1}>
+                <Card className="hover-lift">
+                  <CardHeader>
+                    <CardTitle className="text-lg">{faq.q}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-gray-600">{faq.a}</p>
+                  </CardContent>
+                </Card>
+              </FadeIn>
             ))}
           </div>
         </div>
