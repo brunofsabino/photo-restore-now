@@ -32,6 +32,7 @@ export async function createPaymentIntent(
       currency: 'usd',
       automatic_payment_methods: {
         enabled: true,
+        allow_redirects: 'always',
       },
       receipt_email: email,
       metadata: {

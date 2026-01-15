@@ -64,11 +64,26 @@ export function StripePaymentForm({ amount, onSuccess }: StripePaymentFormProps)
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+        <p className="text-sm text-blue-800">
+          <strong>💳 Payment Methods Available:</strong>
+        </p>
+        <ul className="text-xs text-blue-700 mt-2 space-y-1">
+          <li>✅ Credit/Debit Cards (Visa, Mastercard, Amex)</li>
+          <li>✅ Link (One-click checkout)</li>
+          <li>🔒 Apple Pay & Google Pay (HTTPS only - available in production)</li>
+        </ul>
+      </div>
+
       <div className="space-y-4">
         <PaymentElement 
           options={{
-            layout: 'tabs',
-            paymentMethodOrder: ['card', 'apple_pay', 'google_pay'],
+            layout: 'accordion',
+            paymentMethodOrder: ['card', 'link', 'paypal', 'apple_pay', 'google_pay'],
+            wallets: {
+              applePay: 'auto',
+              googlePay: 'auto',
+            },
           }}
         />
       </div>

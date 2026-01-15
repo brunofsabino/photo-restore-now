@@ -372,8 +372,7 @@ export default function CheckoutPage() {
                       <Elements 
                         stripe={stripePromise} 
                         options={{
-                          clientSecret,
-                          appearance: {
+                          clientSecret,                          locale: 'en',                          appearance: {
                             theme: 'stripe',
                             variables: {
                               colorPrimary: '#3b82f6',

@@ -4,6 +4,8 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { CartProvider } from "@/contexts/CartContext";
 import AuthSessionProvider from "./providers/SessionProvider";
+import { MixpanelProvider } from "@/components/MixpanelProvider";
+import { CrispProvider } from "@/components/CrispProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,10 +24,13 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthSessionProvider>
-          <CartProvider>
-            {children}
-            <Toaster />
-          </CartProvider>
+          <MixpanelProvider>
+            <CartProvider>
+              {children}
+              <Toaster />
+              <CrispProvider />
+            </CartProvider>
+          </MixpanelProvider>
         </AuthSessionProvider>
       </body>
     </html>
