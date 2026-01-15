@@ -40,60 +40,66 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
 export const PRICING_PACKAGES: PricingPackage[] = [
   {
     id: '1-photo',
-    name: 'Basic Package',
+    name: 'Try It Package',
     photoCount: 1,
-    basePrice: 999, // $9.99 (restoration base price)
+    basePrice: 599, // $5.99 (was $9.99)
     features: [
-      'AI-powered processing',
-      'Sharpness correction',
-      'Noise removal',
-      'Digital download',
+      'AI-powered restoration',
+      'HD quality download',
+      'Remove scratches & tears',
+      'Print-ready quality',
       '24-hour delivery',
       'Email support',
+      'Money-back guarantee',
     ],
   },
   {
     id: '3-photos',
-    name: 'Family Package',
+    name: 'Family Memories',
     photoCount: 3,
-    basePrice: 2499, // $24.99
+    basePrice: 1497, // $14.97 (was $24.99)
     popular: true,
+    badge: 'Most Popular',
     features: [
-      'Everything in Basic',
-      '~$8.33 per photo',
-      'Save $5',
-      'Perfect for family photos',
-      'Priority delivery',
+      'Everything in Try It',
+      'Only $4.99 per photo',
+      'Save over 15%',
+      'Perfect for family album',
+      'Priority 12-hour delivery',
+      'Lifetime cloud storage',
       'Satisfaction guarantee',
     ],
   },
   {
     id: '5-photos',
-    name: 'Memories Package',
+    name: 'Album Package',
     photoCount: 5,
-    basePrice: 3999, // $39.99
+    basePrice: 2295, // $22.95 (was $39.99)
+    badge: 'Best Value',
     features: [
       'Everything in Family',
-      '~$8.00 per photo',
-      'Best value',
-      'Premium processing',
-      'Fastest delivery',
-      '100% satisfaction guarantee',
+      'Only $4.59 per photo',
+      'Save 30% vs single photo',
+      'Colorize B&W photos included',
+      '6-hour express delivery',
+      'Share link with family',
+      'Premium support',
     ],
   },
   {
     id: '10-photos',
-    name: 'Heritage Package',
+    name: 'Heritage Collection',
     photoCount: 10,
-    basePrice: 6999, // $69.99
+    basePrice: 3997, // $39.97 (was $69.99)
     badge: 'Premium',
     features: [
-      'Everything in Memories',
-      '~$6.99 per photo',
-      'Perfect for old albums',
-      'Complete digitization',
-      'Dedicated VIP support',
-      'Express delivery',
+      'Everything in Album',
+      'Only $3.99 per photo',
+      'Best savings - save 40%',
+      'Complete album restoration',
+      'Before/After comparisons',
+      'White glove service',
+      'VIP support & same-day delivery',
     ],
   },
 ];
