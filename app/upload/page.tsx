@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, Suspense } from 'react';
+import { useState, useRef, Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -32,6 +32,7 @@ function UploadPageContent() {
 
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false);
   
   // Crop modal states
   const [cropModalOpen, setCropModalOpen] = useState(false);
@@ -40,20 +41,37 @@ function UploadPageContent() {
   const [pendingFiles, setPendingFiles] = useState<File[]>([]);
   const [currentFileIndex, setCurrentFileIndex] = useState(0);
 
+  // Check for guest checkout on mount
+  useEffect(() => {
+    const guestCheckout = sessionStorage.getItem('guestCheckout');
+    if (guestCheckout) {
+      console.log('[Upload Page] Found guest checkout', guestCheckout);
+      setIsGuestCheckout(true);
+    }
+  }, []);
+
   // Redirect to service selection if no service specified
   if (!searchParams.get('service')) {
     router.push(`/select-service?package=${packageId}`);
     return null;
   }
 
-  // Redirect to signin if not authenticated
-  if (status === 'unauthenticated') {
-    router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent(`/upload?package=${packageId}&service=${serviceType}`));
-    return null;
+  // Redirect to signin if not authenticated AND not guest checkout
+  if (status === 'unauthenticated' && !isGuestCheckout) {
+    // Check sessionStorage one more time before redirecting
+    if (typeof window !== 'undefined') {
+      const guestCheckout = sessionStorage.getItem('guestCheckout');
+      if (!guestCheckout) {
+        router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent(`/upload?package=${packageId}&service=${serviceType}`));
+        return null;
+      } else {
+        setIsGuestCheckout(true);
+      }
+    }
   }
 
   // Show loading while checking authentication
-  if (status === 'loading') {
+  if (status === 'loading' && !isGuestCheckout) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

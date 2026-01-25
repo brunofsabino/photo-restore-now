@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
@@ -21,15 +21,33 @@ function SelectServiceContent() {
   const packageInfo = PRICING_PACKAGES.find(p => p.id === packageId);
   
   const [selectedService, setSelectedService] = useState<ServiceType | null>(null);
+  const [isGuestCheckout, setIsGuestCheckout] = useState(false);
 
-  // Redirect to signin if not authenticated
-  if (status === 'unauthenticated') {
-    router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent('/select-service?package=' + packageId));
-    return null;
+  // Check for guest checkout on mount
+  useEffect(() => {
+    const guestCheckout = sessionStorage.getItem('guestCheckout');
+    if (guestCheckout) {
+      console.log('[Select Service] Found guest checkout', guestCheckout);
+      setIsGuestCheckout(true);
+    }
+  }, []);
+
+  // Redirect to signin if not authenticated AND not guest checkout
+  if (status === 'unauthenticated' && !isGuestCheckout) {
+    // Check sessionStorage one more time before redirecting
+    if (typeof window !== 'undefined') {
+      const guestCheckout = sessionStorage.getItem('guestCheckout');
+      if (!guestCheckout) {
+        router.push('/api/auth/signin?callbackUrl=' + encodeURIComponent('/select-service?package=' + packageId));
+        return null;
+      } else {
+        setIsGuestCheckout(true);
+      }
+    }
   }
 
   // Show loading while checking authentication
-  if (status === 'loading') {
+  if (status === 'loading' && !isGuestCheckout) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">

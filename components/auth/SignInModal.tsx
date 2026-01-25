@@ -29,11 +29,16 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
   const handleGuestCheckout = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    console.log('[Guest Checkout] Form submitted', { guestEmail, guestName })
+    
     // Sanitize and validate inputs
     const sanitizedEmail = sanitizeEmail(guestEmail)
     const sanitizedName = sanitizeName(guestName)
     
+    console.log('[Guest Checkout] Sanitized', { sanitizedEmail, sanitizedName })
+    
     if (!isValidEmail(sanitizedEmail)) {
+      console.log('[Guest Checkout] Invalid email', sanitizedEmail)
       toast({
         title: "Invalid Email",
         description: "Please enter a valid email address.",
@@ -43,31 +48,46 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
       return
     }
 
+    console.log('[Guest Checkout] Email valid, starting process')
     setIsLoading(true)
 
     try {
       // Store guest info in sessionStorage for checkout
-      sessionStorage.setItem('guestCheckout', JSON.stringify({
+      const guestData = {
         email: sanitizedEmail,
         name: sanitizedName || 'Guest',
         timestamp: Date.now()
-      }))
+      }
+      
+      console.log('[Guest Checkout] Storing in sessionStorage', guestData)
+      sessionStorage.setItem('guestCheckout', JSON.stringify(guestData))
+      
+      // Also store in cookie for middleware and server-side checks
+      document.cookie = `guestCheckout=${encodeURIComponent(JSON.stringify(guestData))}; path=/; max-age=86400`
 
       logger.info('Guest checkout initiated', { 
         email: sanitizedEmail,
         hasName: !!sanitizedName 
       })
 
+      console.log('[Guest Checkout] Showing success toast')
       toast({
         title: "Success!",
         description: "Continuing as guest...",
       })
 
-      // Close modal and redirect
+      // Close modal first, then redirect after a brief delay
+      console.log('[Guest Checkout] Closing modal')
       onClose()
-      const redirectUrl = callbackUrl || '/upload'
-      router.push(redirectUrl)
+      
+      // Small delay to ensure modal closes before redirect
+      setTimeout(() => {
+        const redirectUrl = callbackUrl || '/upload'
+        console.log('[Guest Checkout] Redirecting to', redirectUrl)
+        router.push(redirectUrl)
+      }, 100)
     } catch (error) {
+      console.error('[Guest Checkout] Error', error)
       logger.error('Guest checkout error', error as Error, { email: sanitizedEmail })
       toast({
         title: "Error",
@@ -96,14 +116,7 @@ export function SignInModal({ isOpen, onClose, callbackUrl, packageId }: SignInM
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent 
         className="sm:max-w-md"
-        onInteractOutside={(e) => {
-          // Bloqueia o fechamento ao clicar fora
-          e.preventDefault()
-        }}
-        onEscapeKeyDown={(e) => {
-          // Bloqueia o fechamento com ESC
-          e.preventDefault()
-        }}
+        // Removido o bloqueio de fechamento para permitir que onClose funcione
       >
         <DialogHeader>
           <DialogTitle className="text-2xl text-center">Sign in to PhotoRestoreNow</DialogTitle>
