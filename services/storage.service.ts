@@ -1,8 +1,8 @@
 /**
  * Storage Service
  * 
- * Simplified storage for local development
- * For production, integrate with S3/R2 or use a file upload service
+ * Automatically uses R2 in production or local storage in development
+ * Checks for R2 configuration and falls back to local if not available
  */
 
 import fs from 'fs';
@@ -10,6 +10,7 @@ import path from 'path';
 import { UploadResult } from '@/types';
 import { STORAGE_PATHS } from '@/lib/constants';
 import { sanitizeFilename } from '@/lib/utils';
+import * as R2Storage from './r2-storage.service';
 
 // Local storage directory (for development)
 const STORAGE_DIR = path.join(process.cwd(), 'uploads');
@@ -27,7 +28,7 @@ Object.values(STORAGE_PATHS).forEach(folder => {
 });
 
 /**
- * Upload a file to local storage
+ * Upload a file - automatically uses R2 if configured, otherwise local storage
  */
 export async function uploadFile(
   buffer: Buffer,
@@ -35,6 +36,12 @@ export async function uploadFile(
   folder: keyof typeof STORAGE_PATHS = 'ORIGINAL_IMAGES',
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
+  // Use R2 if configured, otherwise fallback to local
+  if (R2Storage.isR2Configured()) {
+    return R2Storage.uploadFile(buffer, filename, folder, contentType);
+  }
+
+  // Local storage fallback
   try {
     const sanitizedFilename = sanitizeFilename(filename);
     const key = `${STORAGE_PATHS[folder]}/${Date.now()}-${sanitizedFilename}`;
@@ -65,12 +72,17 @@ export async function uploadFile(
 
 /**
  * Get a signed URL for temporary access
- * For local storage, just return the file URL
  */
 export async function getSignedDownloadUrl(
   key: string,
   expiresIn: number = 3600
 ): Promise<string> {
+  // Use R2 if configured, otherwise fallback to local
+  if (R2Storage.isR2Configured()) {
+    return R2Storage.getSignedDownloadUrl(key, expiresIn);
+  }
+
+  // Local storage fallback
   try {
     const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${key}`;
     return url;
@@ -84,6 +96,12 @@ export async function getSignedDownloadUrl(
  * Download a file from storage
  */
 export async function downloadFile(key: string): Promise<Buffer> {
+  // Use R2 if configured, otherwise fallback to local
+  if (R2Storage.isR2Configured()) {
+    return R2Storage.downloadFile(key);
+  }
+
+  // Local storage fallback
   try {
     const filePath = path.join(STORAGE_DIR, key);
     
