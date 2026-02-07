@@ -34,6 +34,8 @@ export default function CheckoutPage() {
   const [stripeConfigured, setStripeConfigured] = useState(false);
   const [imageUrls, setImageUrls] = useState<Map<string, string[]>>(new Map());
   const [wasAuthenticated, setWasAuthenticated] = useState(false);
+  const [uploadedFileUrls, setUploadedFileUrls] = useState<Array<{ url: string; originalName: string; size: number; mimeType: string }> | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleSignOut = async () => {
     // Clear cart before signing out
@@ -98,6 +100,56 @@ export default function CheckoutPage() {
     };
   }, [cartState.items]);
 
+  // Upload images to server before creating payment intent
+  const uploadImages = async () => {
+    try {
+      setUploading(true);
+      setError('');
+
+      // Collect all image files from cart
+      const allImages: File[] = [];
+      cartState.items.forEach(item => {
+        allImages.push(...item.images);
+      });
+
+      if (allImages.length === 0) {
+        throw new Error('No images to upload');
+      }
+
+      // Create FormData
+      const formData = new FormData();
+      allImages.forEach(file => {
+        formData.append('files', file);
+      });
+
+      // Upload to server
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error?.message || 'Failed to upload images');
+      }
+
+      const result = await response.json();
+      
+      if (!result.success || !result.files || result.files.length === 0) {
+        throw new Error('Upload failed - no files returned');
+      }
+
+      setUploadedFileUrls(result.files);
+      return result.files;
+    } catch (err) {
+      console.error('Upload error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to upload images');
+      throw err;
+    } finally {
+      setUploading(false);
+    }
+  };
+
   useEffect(() => {
     if (mounted && cartState.items.length === 0) {
       router.push('/pricing');
@@ -128,6 +180,16 @@ export default function CheckoutPage() {
         const firstItem = cartState.items[0];
         const packageId = firstItem?.packageId || '1-photo';
 
+        // Upload images first if not already uploaded
+        let fileUrls = uploadedFileUrls;
+        if (!fileUrls) {
+          fileUrls = await uploadImages();
+        }
+
+        // Extract only keys (not full URLs) to minimize metadata size
+        // Keys are like "original/1234-filename.jpg" instead of full URL
+        const keys = fileUrls.map(f => f.key);
+
         const response = await fetch('/api/payment/create-intent', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -136,6 +198,7 @@ export default function CheckoutPage() {
             email,
             packageId: packageId,
             imageCount: totalPhotos,
+            fileKeys: keys,
           }),
         });
 
@@ -389,8 +452,15 @@ export default function CheckoutPage() {
                   ) : (
                     <div className="border rounded-lg p-8 bg-white text-center">
                       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-                      <p className="text-gray-600">Preparing payment...</p>
-                      <p className="text-sm text-gray-500 mt-2">Please wait while we set up secure payment</p>
+                      <p className="text-gray-600">
+                        {uploading ? 'Uploading images...' : 'Preparing payment...'}
+                      </p>
+                      <p className="text-sm text-gray-500 mt-2">
+                        {uploading 
+                          ? 'Please wait while we securely upload your photos'
+                          : 'Please wait while we set up secure payment'
+                        }
+                      </p>
                     </div>
                   )
                 ) : (

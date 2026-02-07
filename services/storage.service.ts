@@ -10,7 +10,7 @@ import path from 'path';
 import { UploadResult } from '@/types';
 import { STORAGE_PATHS } from '@/lib/constants';
 import { sanitizeFilename } from '@/lib/utils';
-import * as R2Storage from './r2-storage.service';
+// import * as R2Storage from './r2-storage.service'; // TODO: Enable in Step 3 after installing AWS SDK
 
 // Local storage directory (for development)
 const STORAGE_DIR = path.join(process.cwd(), 'uploads');
@@ -36,16 +36,19 @@ export async function uploadFile(
   folder: keyof typeof STORAGE_PATHS = 'ORIGINAL_IMAGES',
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
+  // TODO: Enable R2 in Step 3
   // Use R2 if configured, otherwise fallback to local
-  if (R2Storage.isR2Configured()) {
-    return R2Storage.uploadFile(buffer, filename, folder, contentType);
-  }
+  // if (R2Storage.isR2Configured()) {
+  //   return R2Storage.uploadFile(buffer, filename, folder, contentType);
+  // }
 
-  // Local storage fallback
+  // Local storage (R2 will be enabled in Step 3)
   try {
-    const sanitizedFilename = sanitizeFilename(filename);
-    const key = `${STORAGE_PATHS[folder]}/${Date.now()}-${sanitizedFilename}`;
-    const filePath = path.join(STORAGE_DIR, key);
+    // Generate short unique ID (8 chars) instead of timestamp + long filename
+    const randomId = Math.random().toString(36).substring(2, 10);
+    const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+    const shortKey = `${STORAGE_PATHS[folder]}/${randomId}.${ext}`;
+    const filePath = path.join(STORAGE_DIR, shortKey);
 
     // Ensure directory exists
     const dir = path.dirname(filePath);
@@ -57,11 +60,11 @@ export async function uploadFile(
     fs.writeFileSync(filePath, buffer);
 
     // Generate URL using the API route
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${key}`;
+    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${shortKey}`;
 
     return {
       url,
-      key,
+      key: shortKey,
       bucket: 'local',
     };
   } catch (error) {
@@ -77,10 +80,11 @@ export async function getSignedDownloadUrl(
   key: string,
   expiresIn: number = 3600
 ): Promise<string> {
+  // TODO: Enable R2 in Step 3
   // Use R2 if configured, otherwise fallback to local
-  if (R2Storage.isR2Configured()) {
-    return R2Storage.getSignedDownloadUrl(key, expiresIn);
-  }
+  // if (R2Storage.isR2Configured()) {
+  //   return R2Storage.getSignedDownloadUrl(key, expiresIn);
+  // }
 
   // Local storage fallback
   try {
@@ -96,12 +100,13 @@ export async function getSignedDownloadUrl(
  * Download a file from storage
  */
 export async function downloadFile(key: string): Promise<Buffer> {
+  // TODO: Enable R2 in Step 3
   // Use R2 if configured, otherwise fallback to local
-  if (R2Storage.isR2Configured()) {
-    return R2Storage.downloadFile(key);
-  }
+  // if (R2Storage.isR2Configured()) {
+  //   return R2Storage.downloadFile(key);
+  // }
 
-  // Local storage fallback
+  // Local storage
   try {
     const filePath = path.join(STORAGE_DIR, key);
     

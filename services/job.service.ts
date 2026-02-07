@@ -15,9 +15,24 @@ import {
 } from './email.service';
 import { JOB_CONFIG } from '@/lib/constants';
 import { sleep } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 // In-memory job store (replace with database in production)
 const jobs = new Map<string, RestorationJob>();
+
+/**
+ * Generate unique job ID
+ */
+function generateJobId(): string {
+  return `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Generate unique image ID
+ */
+function generateImageId(): string {
+  return `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+}
 
 /**
  * Create a new restoration job
@@ -29,7 +44,7 @@ export async function createJob(
   paymentIntentId: string,
   totalAmount: number
 ): Promise<string> {
-  const jobId = `job_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  const jobId = generateJobId();
 
   const imageFiles: ImageFile[] = await Promise.all(
     images.map(async (file, index) => {
@@ -37,7 +52,7 @@ export async function createJob(
       const uploadResult = await uploadOriginalImage(buffer, file.name);
 
       return {
-        id: `img_${index}_${Date.now()}`,
+        id: generateImageId(),
         originalName: file.name,
         size: file.size,
         mimeType: file.type,
@@ -227,4 +242,110 @@ export function getJobsByEmail(email: string): RestorationJob[] {
 export function getJobStatus(jobId: string): ImageStatus | null {
   const job = jobs.get(jobId);
   return job ? job.status : null;
+}
+
+/**
+ * Create job from webhook (after payment success)
+ * Downloads images from file keys and processes them
+ */
+export async function createJobFromWebhook(
+  orderId: string,
+  email: string,
+  fileKeys: string[],
+  packageId: string,
+  photoCount: number
+): Promise<string> {
+  const jobId = generateJobId();
+  
+  logger.info('Creating job from webhook', {
+    jobId,
+    orderId,
+    email,
+    fileCount: fileKeys.length,
+    packageId,
+  });
+
+  // Validate file count
+  if (fileKeys.length !== photoCount) {
+    throw new Error(`File count mismatch: expected ${photoCount}, got ${fileKeys.length}`);
+  }
+
+  // Reconstruct full URLs from keys
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const fileUrls = fileKeys.map(key => `${baseUrl}/api/files/${key}`);
+
+  // Download images from URLs
+  const images: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];
+  
+  for (const url of fileUrls) {
+    try {
+      // Extract filename from URL (last part after /)
+      const urlParts = url.split('/');
+      const filename = urlParts[urlParts.length - 1];
+      
+      logger.info('Downloading image from URL', { url, filename });
+      
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to download ${filename}: ${response.statusText}`);
+      }
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const contentType = response.headers.get('content-type') || 'image/jpeg';
+      
+      images.push({
+        buffer,
+        filename,
+        mimeType: contentType,
+      });
+    } catch (error) {
+      logger.error('Error downloading image', {
+        url,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      });
+      throw error;
+    }
+  }
+
+  logger.info('All images downloaded successfully', { count: images.length });
+
+  // Create job
+  const job: RestorationJob = {
+    id: jobId,
+    orderId,
+    email,
+    packageId,
+    images: images.map((img, index) => ({
+      id: generateImageId(),
+      originalName: img.filename,
+      originalUrl: fileUrls[index],
+      restoredUrl: null,
+      status: 'pending' as ImageStatus,
+      size: img.buffer.length,
+      mimeType: img.mimeType,
+    })),
+    status: 'pending',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+  };
+
+  jobs.set(jobId, job);
+
+  logger.info('Job created from webhook', {
+    jobId,
+    orderId,
+    email,
+    imageCount: job.images.length,
+  });
+
+  // Process job asynchronously
+  processJob(jobId).catch(error => {
+    logger.error('Error processing job from webhook', {
+      jobId,
+      error: error instanceof Error ? error.message : 'Unknown error',
+    });
+  });
+
+  return jobId;
 }

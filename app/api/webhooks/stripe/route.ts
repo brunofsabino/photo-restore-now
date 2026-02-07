@@ -7,6 +7,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { verifyStripeWebhook } from '@/lib/webhook-verification';
 import { logger } from '@/lib/logger';
 import { sendOrderConfirmation } from '@/services/email.service';
+import { createJobFromWebhook } from '@/services/job.service';
 import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 
@@ -86,6 +87,44 @@ export async function POST(request: NextRequest) {
           );
 
           logger.info('Confirmation email sent', { orderId: order.id, email });
+
+          // Trigger job processing if fileKeys are present
+          if (paymentIntent.metadata.fileKeys) {
+            try {
+              const fileKeys = paymentIntent.metadata.fileKeys.split(',');
+              const photoCount = parseInt(paymentIntent.metadata.imageCount || '1');
+              
+              logger.info('Starting job processing from webhook', {
+                orderId: order.id,
+                fileCount: fileKeys.length,
+                packageId: paymentIntent.metadata.packageId,
+                fileKeys: fileKeys,
+              });
+
+              const jobId = await createJobFromWebhook(
+                order.id,
+                email,
+                fileKeys,
+                paymentIntent.metadata.packageId || '1-photo',
+                photoCount
+              );
+
+              logger.info('Job created from webhook', { orderId: order.id, jobId });
+            } catch (jobError) {
+              logger.error('Error creating job from webhook', {
+                orderId: order.id,
+                error: jobError instanceof Error ? jobError.message : String(jobError),
+                stack: jobError instanceof Error ? jobError.stack : undefined,
+                metadata: paymentIntent.metadata,
+              });
+              // Don't fail the webhook - order was created successfully
+            }
+          } else {
+            logger.warn('No fileKeys in payment intent metadata', {
+              orderId: order.id,
+              metadata: paymentIntent.metadata,
+            });
+          }
         } catch (error) {
           logger.error('Error processing payment_intent.succeeded', error as Error);
         }

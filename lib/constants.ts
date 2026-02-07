@@ -184,7 +184,7 @@ export const AI_PROVIDERS = {
   HOTPOT: 'hotpot',
 } as const;
 
-export const DEFAULT_AI_PROVIDER = (process.env.AI_PROVIDER || 'vanceai') as 'vanceai' | 'hotpot';
+export const DEFAULT_AI_PROVIDER = (process.env.AI_PROVIDER || 'fake') as 'fake' | 'vanceai' | 'hotpot';
 
 // ============================================
 // JOB PROCESSING

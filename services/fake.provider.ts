@@ -1,44 +1,90 @@
 /**
  * Fake AI Provider for Testing
- * Simulates photo restoration without calling real APIs
+ * Simulates async job processing without calling real APIs
  */
 
-export class FakeAIProvider {
-  private apiKey: string;
+import { ImageRestorationProvider, RestorationRequest, RestorationResult } from '@/types';
 
-  constructor() {
-    this.apiKey = 'fake_key_for_testing';
+export class FakeProvider implements ImageRestorationProvider {
+  name = 'Fake AI Provider (Testing)';
+  
+  private jobs = new Map<string, {
+    imageBuffer: Buffer;
+    fileName: string;
+    status: 'processing' | 'completed' | 'failed';
+    completedAt?: Date;
+  }>();
+
+  /**
+   * Simulates uploading image to AI service
+   */
+  async uploadImage(request: RestorationRequest): Promise<{ jobId: string }> {
+    const jobId = `fake_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+    
+    this.jobs.set(jobId, {
+      imageBuffer: request.imageBuffer,
+      fileName: request.fileName,
+      status: 'processing',
+    });
+
+    console.log(`[FAKE-AI] Image uploaded | jobId: ${jobId}`);
+    return { jobId };
   }
 
   /**
-   * Simulate photo restoration by returning the same image
-   * In a real scenario, this would call the AI API
+   * Simulates starting restoration process
+   * Completes immediately for testing
    */
-  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
-    console.log('[FAKE-AI] Simulating photo restoration...');
+  async restoreImage(jobId: string): Promise<void> {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    console.log(`[FAKE-AI] Starting restoration | jobId: ${jobId}`);
     
-    // Simulate processing time (1-3 seconds)
-    const delay = Math.random() * 2000 + 1000;
-    await new Promise(resolve => setTimeout(resolve, delay));
-    
-    console.log(`[FAKE-AI] Processing complete after ${(delay/1000).toFixed(2)}s`);
-    
-    // Return the same image (in production, this would be the restored version)
-    // You could also apply some basic filters here to simulate changes
-    return imageBuffer;
+    // Simulate instant completion (no actual processing)
+    job.status = 'completed';
+    job.completedAt = new Date();
+    this.jobs.set(jobId, job);
   }
 
   /**
-   * Check if provider is configured
+   * Checks job status
    */
-  isConfigured(): boolean {
-    return true; // Always returns true for testing
+  async checkStatus(jobId: string): Promise<{ status: 'processing' | 'completed' | 'failed' }> {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    return { status: job.status };
   }
 
   /**
-   * Get provider name
+   * Gets restoration result (returns original image unchanged)
    */
-  getName(): string {
-    return 'Fake AI Provider (Testing)';
+  async getResult(jobId: string): Promise<RestorationResult> {
+    const job = this.jobs.get(jobId);
+    if (!job) {
+      throw new Error(`Job ${jobId} not found`);
+    }
+
+    if (job.status !== 'completed') {
+      return {
+        success: false,
+        errorMessage: 'Job not completed yet',
+      };
+    }
+
+    console.log(`[FAKE-AI] Returning result | jobId: ${jobId} | fileName: ${job.fileName}`);
+
+    // Return original image unchanged
+    return {
+      success: true,
+      restoredImageBuffer: job.imageBuffer,
+      jobId,
+      processingTime: 0,
+    };
   }
 }

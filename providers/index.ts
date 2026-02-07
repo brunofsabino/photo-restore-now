@@ -9,6 +9,7 @@
 import { ImageRestorationProvider } from '@/types';
 import { VanceAIProvider } from './vanceai.provider';
 import { HotpotAIProvider } from './hotpot.provider';
+import { FakeProvider } from '../services/fake.provider';
 import { DEFAULT_AI_PROVIDER } from '@/lib/constants';
 
 /**
@@ -18,6 +19,9 @@ export function getAIProvider(): ImageRestorationProvider {
   const providerName = DEFAULT_AI_PROVIDER;
 
   switch (providerName) {
+    case 'fake':
+      return new FakeProvider();
+      
     case 'vanceai':
       return new VanceAIProvider();
     
@@ -26,9 +30,9 @@ export function getAIProvider(): ImageRestorationProvider {
     
     default:
       console.warn(
-        `Unknown AI provider: ${providerName}, falling back to VanceAI`
+        `Unknown AI provider: ${providerName}, using Fake provider for development`
       );
-      return new VanceAIProvider();
+      return new FakeProvider();
   }
 }
 
