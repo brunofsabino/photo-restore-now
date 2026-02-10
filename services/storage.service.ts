@@ -10,7 +10,7 @@ import path from 'path';
 import { UploadResult } from '@/types';
 import { STORAGE_PATHS } from '@/lib/constants';
 import { sanitizeFilename } from '@/lib/utils';
-// import * as R2Storage from './r2-storage.service'; // TODO: Enable in Step 3 after installing AWS SDK
+import * as R2Storage from './r2-storage.service';
 
 // Local storage directory (for development)
 const STORAGE_DIR = path.join(process.cwd(), 'uploads');
@@ -36,13 +36,20 @@ export async function uploadFile(
   folder: keyof typeof STORAGE_PATHS = 'ORIGINAL_IMAGES',
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
-  // TODO: Enable R2 in Step 3
-  // Use R2 if configured, otherwise fallback to local
-  // if (R2Storage.isR2Configured()) {
-  //   return R2Storage.uploadFile(buffer, filename, folder, contentType);
-  // }
+  // Check if R2 is configured
+  const isR2Available = process.env.R2_ACCOUNT_ID && 
+                         process.env.R2_ACCESS_KEY_ID && 
+                         process.env.R2_BUCKET_NAME;
 
-  // Local storage (R2 will be enabled in Step 3)
+  // Use R2 in production, or in development if USE_R2=true
+  const useR2 = isR2Available && (process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true');
+  
+  if (useR2) {
+    console.log('[STORAGE] Using R2 cloud storage');
+    return R2Storage.uploadFile(buffer, filename, folder, contentType);
+  }
+
+  // Local storage fallback (development)
   try {
     // Generate short unique ID (8 chars) instead of timestamp + long filename
     const randomId = Math.random().toString(36).substring(2, 10);
@@ -80,11 +87,17 @@ export async function getSignedDownloadUrl(
   key: string,
   expiresIn: number = 3600
 ): Promise<string> {
-  // TODO: Enable R2 in Step 3
-  // Use R2 if configured, otherwise fallback to local
-  // if (R2Storage.isR2Configured()) {
-  //   return R2Storage.getSignedDownloadUrl(key, expiresIn);
-  // }
+  // Check if R2 is configured
+  const isR2Available = process.env.R2_ACCOUNT_ID && 
+                         process.env.R2_ACCESS_KEY_ID && 
+                         process.env.R2_BUCKET_NAME;
+
+  // Use R2 in production, or in development if USE_R2=true
+  const useR2 = isR2Available && (process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true');
+  
+  if (useR2) {
+    return R2Storage.getSignedDownloadUrl(key, expiresIn);
+  }
 
   // Local storage fallback
   try {
@@ -100,13 +113,19 @@ export async function getSignedDownloadUrl(
  * Download a file from storage
  */
 export async function downloadFile(key: string): Promise<Buffer> {
-  // TODO: Enable R2 in Step 3
-  // Use R2 if configured, otherwise fallback to local
-  // if (R2Storage.isR2Configured()) {
-  //   return R2Storage.downloadFile(key);
-  // }
+  // Check if R2 is configured
+  const isR2Available = process.env.R2_ACCOUNT_ID && 
+                         process.env.R2_ACCESS_KEY_ID && 
+                         process.env.R2_BUCKET_NAME;
 
-  // Local storage
+  // Use R2 in production, or in development if USE_R2=true
+  const useR2 = isR2Available && (process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true');
+  
+  if (useR2) {
+    return R2Storage.downloadFile(key);
+  }
+
+  // Local storage fallback
   try {
     const filePath = path.join(STORAGE_DIR, key);
     

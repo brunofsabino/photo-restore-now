@@ -74,6 +74,43 @@ model Order {
   originalFiles   String[] // URLs to original uploaded photos
   restoredFiles   String[] // URLs to restored photos
   user            User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  jobs            Job[]    // Restoration jobs for this order
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model Job {
+  id              String     @id @default(cuid())
+  orderId         String?    // Link with Order (optional for backward compat)
+  userId          String?    // Guest checkout = null
+  email           String
+  packageId       String
+  serviceType     String     @default("restoration")
+  status          String     // "pending" | "paid" | "processing" | "completed" | "failed"
+  paymentIntentId String?
+  totalAmount     Int
+  errorMessage    String?    @db.Text
+  images          JobImage[]
+  order           Order?     @relation(fields: [orderId], references: [id], onDelete: SetNull)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  completedAt     DateTime?
+
+  @@index([email])
+  @@index([status])
+  @@index([orderId])
+}
+
+model JobImage {
+  id           String   @id @default(cuid())
+  jobId        String
+  originalName String
+  size         Int
+  mimeType     String
+  originalUrl  String?  @db.Text
+  restoredUrl  String?  @db.Text
+  uploadedAt   DateTime @default(now())
+  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+
+  @@index([jobId])
 }

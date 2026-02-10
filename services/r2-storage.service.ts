@@ -30,6 +30,12 @@ const getR2Client = () => {
   }
 
   if (!r2Client) {
+    console.log('[R2] Initializing client...', {
+      accountId: process.env.R2_ACCOUNT_ID,
+      bucket: process.env.R2_BUCKET_NAME,
+      endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
+    });
+    
     r2Client = new S3Client({
       region: 'auto',
       endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
@@ -37,6 +43,10 @@ const getR2Client = () => {
         accessKeyId: process.env.R2_ACCESS_KEY_ID!,
         secretAccessKey: process.env.R2_SECRET_ACCESS_KEY!,
       },
+      requestHandler: {
+        // Add 30 second timeout
+        requestTimeout: 30000,
+      } as any,
     });
   }
 
@@ -53,9 +63,17 @@ export async function uploadFile(
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
   try {
+    console.log('[R2] Starting upload...', { filename, folder, size: buffer.length });
+    
     const client = getR2Client();
     const sanitizedFilename = sanitizeFilename(filename);
-    const key = `${STORAGE_PATHS[folder]}/${Date.now()}-${sanitizedFilename}`;
+    
+    // Use short random ID like in local storage
+    const randomId = Math.random().toString(36).substring(2, 10);
+    const ext = sanitizedFilename.split('.').pop()?.toLowerCase() || 'jpg';
+    const key = `${STORAGE_PATHS[folder]}/${randomId}.${ext}`;
+
+    console.log('[R2] Uploading to key:', key);
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
@@ -65,6 +83,8 @@ export async function uploadFile(
     });
 
     await client.send(command);
+
+    console.log('[R2] Upload successful!', { key });
 
     // Generate public URL (if R2_PUBLIC_URL is set)
     const publicUrl = process.env.R2_PUBLIC_URL 
@@ -77,7 +97,12 @@ export async function uploadFile(
       bucket: process.env.R2_BUCKET_NAME!,
     };
   } catch (error) {
-    console.error('R2 upload error:', error);
+    console.error('[R2] Upload error:', error);
+    console.error('[R2] Error details:', {
+      name: (error as Error).name,
+      message: (error as Error).message,
+      stack: (error as Error).stack,
+    });
     throw new Error('Failed to upload file to R2 storage');
   }
 }

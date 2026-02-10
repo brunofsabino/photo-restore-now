@@ -16,9 +16,10 @@ import {
 import { JOB_CONFIG } from '@/lib/constants';
 import { sleep } from '@/lib/utils';
 import { logger } from '@/lib/logger';
+import { PrismaClient } from '@prisma/client';
 
-// In-memory job store (replace with database in production)
-const jobs = new Map<string, RestorationJob>();
+// Initialize Prisma Client
+const prisma = new PrismaClient();
 
 /**
  * Generate unique job ID
@@ -97,16 +98,48 @@ export async function createJob(
  * Process a restoration job
  */
 export async function processJob(jobId: string): Promise<void> {
-  const job = jobs.get(jobId);
-  if (!job) {
+  // Fetch job from database
+  const dbJob = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: { images: true },
+  });
+
+  if (!dbJob) {
     throw new Error(`Job ${jobId} not found`);
   }
 
+  // Convert to RestorationJob type
+  const job: RestorationJob = {
+    id: dbJob.id,
+    orderId: dbJob.orderId || undefined,
+    userId: dbJob.userId || undefined,
+    email: dbJob.email,
+    packageId: dbJob.packageId as any,
+    serviceType: dbJob.serviceType as any,
+    status: dbJob.status as ImageStatus,
+    paymentIntentId: dbJob.paymentIntentId || undefined,
+    totalAmount: dbJob.totalAmount,
+    errorMessage: dbJob.errorMessage || undefined,
+    images: dbJob.images.map(img => ({
+      id: img.id,
+      originalName: img.originalName,
+      size: img.size,
+      mimeType: img.mimeType,
+      uploadedAt: img.uploadedAt,
+      originalUrl: img.originalUrl || undefined,
+      restoredUrl: img.restoredUrl || undefined,
+    })),
+    createdAt: dbJob.createdAt,
+    updatedAt: dbJob.updatedAt,
+    completedAt: dbJob.completedAt || undefined,
+  };
+
   try {
     // Update status to processing
-    job.status = 'processing';
-    job.updatedAt = new Date();
-    jobs.set(jobId, job);
+    await prisma.job.update({
+      where: { id: jobId },
+      data: { status: 'processing', updatedAt: new Date() },
+    });
 
     const aiProvider = getAIProvider();
     console.log(`Processing job ${jobId} with ${aiProvider.name}`);
@@ -190,12 +223,27 @@ export async function processJob(jobId: string): Promise<void> {
       }
     }
 
-    // Update job with restored images
+    // Update job and images with restored URLs
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: 'completed',
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      },
+    });
+
+    // Update each image with restored URL
+    for (let i = 0; i < restoredImages.length; i++) {
+      await prisma.jobImage.update({
+        where: { id: restoredImages[i].id },
+        data: { restoredUrl: restoredImages[i].restoredUrl },
+      });
+    }
+
     job.images = restoredImages;
     job.status = 'completed';
     job.completedAt = new Date();
-    job.updatedAt = new Date();
-    jobs.set(jobId, job);
 
     // Send completion email
     const downloadLinks = restoredImages.map(img => img.restoredUrl!);
@@ -212,36 +260,105 @@ export async function processJob(jobId: string): Promise<void> {
   } catch (error) {
     console.error(`Job ${jobId} failed:`, error);
 
-    job.status = 'failed';
-    job.errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    job.updatedAt = new Date();
-    jobs.set(jobId, job);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+
+    // Update job status to failed
+    await prisma.job.update({
+      where: { id: jobId },
+      data: {
+        status: 'failed',
+        errorMessage,
+        updatedAt: new Date(),
+      },
+    });
 
     // Send failure email
-    await sendRestorationFailed(job.email, jobId, job.errorMessage);
+    await sendRestorationFailed(job.email, jobId, errorMessage);
   }
 }
 
 /**
- * Get job status
+ * Get job by ID
  */
-export function getJob(jobId: string): RestorationJob | undefined {
-  return jobs.get(jobId);
+export async function getJob(jobId: string): Promise<RestorationJob | null> {
+  const dbJob = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: { images: true },
+  });
+
+  if (!dbJob) return null;
+
+  return {
+    id: dbJob.id,
+    orderId: dbJob.orderId || undefined,
+    userId: dbJob.userId || undefined,
+    email: dbJob.email,
+    packageId: dbJob.packageId as any,
+    serviceType: dbJob.serviceType as any,
+    status: dbJob.status as ImageStatus,
+    paymentIntentId: dbJob.paymentIntentId || undefined,
+    totalAmount: dbJob.totalAmount,
+    errorMessage: dbJob.errorMessage || undefined,
+    images: dbJob.images.map(img => ({
+      id: img.id,
+      originalName: img.originalName,
+      size: img.size,
+      mimeType: img.mimeType,
+      uploadedAt: img.uploadedAt,
+      originalUrl: img.originalUrl || undefined,
+      restoredUrl: img.restoredUrl || undefined,
+    })),
+    createdAt: dbJob.createdAt,
+    updatedAt: dbJob.updatedAt,
+    completedAt: dbJob.completedAt || undefined,
+  };
 }
 
 /**
  * Get all jobs for an email
  */
-export function getJobsByEmail(email: string): RestorationJob[] {
-  return Array.from(jobs.values()).filter(job => job.email === email);
+export async function getJobsByEmail(email: string): Promise<RestorationJob[]> {
+  const dbJobs = await prisma.job.findMany({
+    where: { email },
+    include: { images: true },
+    orderBy: { createdAt: 'desc' },
+  });
+
+  return dbJobs.map(dbJob => ({
+    id: dbJob.id,
+    orderId: dbJob.orderId || undefined,
+    userId: dbJob.userId || undefined,
+    email: dbJob.email,
+    packageId: dbJob.packageId as any,
+    serviceType: dbJob.serviceType as any,
+    status: dbJob.status as ImageStatus,
+    paymentIntentId: dbJob.paymentIntentId || undefined,
+    totalAmount: dbJob.totalAmount,
+    errorMessage: dbJob.errorMessage || undefined,
+    images: dbJob.images.map(img => ({
+      id: img.id,
+      originalName: img.originalName,
+      size: img.size,
+      mimeType: img.mimeType,
+      uploadedAt: img.uploadedAt,
+      originalUrl: img.originalUrl || undefined,
+      restoredUrl: img.restoredUrl || undefined,
+    })),
+    createdAt: dbJob.createdAt,
+    updatedAt: dbJob.updatedAt,
+    completedAt: dbJob.completedAt || undefined,
+  }));
 }
 
 /**
  * Get job status
  */
-export function getJobStatus(jobId: string): ImageStatus | null {
-  const job = jobs.get(jobId);
-  return job ? job.status : null;
+export async function getJobStatus(jobId: string): Promise<ImageStatus | null> {
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    select: { status: true },
+  });
+  return job ? (job.status as ImageStatus) : null;
 }
 
 /**
@@ -310,33 +427,33 @@ export async function createJobFromWebhook(
 
   logger.info('All images downloaded successfully', { count: images.length });
 
-  // Create job
-  const job: RestorationJob = {
-    id: jobId,
-    orderId,
-    email,
-    packageId,
-    images: images.map((img, index) => ({
-      id: generateImageId(),
-      originalName: img.filename,
-      originalUrl: fileUrls[index],
-      restoredUrl: null,
-      status: 'pending' as ImageStatus,
-      size: img.buffer.length,
-      mimeType: img.mimeType,
-    })),
-    status: 'pending',
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  };
-
-  jobs.set(jobId, job);
+  // Create job in database
+  const dbJob = await prisma.job.create({
+    data: {
+      id: jobId,
+      orderId,
+      email,
+      packageId,
+      serviceType: 'restoration',
+      status: 'pending',
+      totalAmount: 0, // Will be updated if needed
+      images: {
+        create: images.map((img, index) => ({
+          originalName: img.filename,
+          size: img.buffer.length,
+          mimeType: img.mimeType,
+          originalUrl: fileUrls[index],
+        })),
+      },
+    },
+    include: { images: true },
+  });
 
   logger.info('Job created from webhook', {
     jobId,
     orderId,
     email,
-    imageCount: job.images.length,
+    imageCount: dbJob.images.length,
   });
 
   // Process job asynchronously
