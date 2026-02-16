@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { CheckCircle, Mail, Download, Home } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { SiteLayout } from '@/components/SiteLayout';
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -23,7 +23,6 @@ export default function PaymentSuccessPage() {
   }, [searchParams]);
 
   return (
-    <SiteLayout>
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4 py-20">
         <Card className="max-w-2xl w-full shadow-2xl">
         <CardHeader className="text-center space-y-4 pb-8">
@@ -126,6 +125,22 @@ export default function PaymentSuccessPage() {
         </CardContent>
       </Card>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <SiteLayout>
+      <Suspense fallback={
+        <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-4 text-gray-600">Loading payment confirmation...</p>
+          </div>
+        </div>
+      }>
+        <PaymentSuccessContent />
+      </Suspense>
     </SiteLayout>
   );
 }

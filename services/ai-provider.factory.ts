@@ -5,7 +5,7 @@
 
 import { VanceAIProvider } from './vanceai.provider';
 import { HotpotProvider } from './hotpot.provider';
-import { FakeAIProvider } from './fake.provider';
+import { FakeProvider } from './fake.provider';
 
 export type AIProviderType = 'vanceai' | 'hotpot' | 'fake';
 
@@ -28,10 +28,10 @@ export class AIProviderFactory {
       case 'hotpot':
         return new HotpotProvider();
       case 'fake':
-        return new FakeAIProvider();
+        return new FakeProvider();
       default:
         console.warn(`Unknown AI provider: ${provider}, falling back to Fake Provider`);
-        return new FakeAIProvider();
+        return new FakeProvider();
     }
   }
 
@@ -40,7 +40,7 @@ export class AIProviderFactory {
    */
   static getAllProviders(): IAIProvider[] {
     return [
-      new FakeAIProvider(),
+      new FakeProvider(),
       new VanceAIProvider(),
       new HotpotProvider(),
     ];
