@@ -5,6 +5,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createPaymentIntent } from '@/services/payment.service';
+import { Analytics } from '@/lib/analytics';
+import { logger } from '@/lib/logger';
 import { z } from 'zod';
 
 const requestSchema = z.object({
@@ -13,21 +15,26 @@ const requestSchema = z.object({
   packageId: z.string(),
   imageCount: z.number().positive(),
   fileKeys: z.array(z.string()).optional(),
+  serviceType: z.enum(['restoration', 'colorization', 'restoration-colorization']).optional(),
 });
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, email, packageId, imageCount, fileKeys } = requestSchema.parse(body);
+    const { amount, email, packageId, imageCount, fileKeys, serviceType } = requestSchema.parse(body);
 
     // Log metadata size for debugging
     const metadataStr = fileKeys ? fileKeys.join(',') : '';
-    console.log('[DEBUG] fileKeys metadata length:', metadataStr.length, '(limit: 500)');
-    console.log('[DEBUG] fileKeys count:', fileKeys?.length || 0);
-    console.log('[DEBUG] fileKeys sample:', metadataStr.substring(0, 100));
+    logger.info('[Payment] Metadata size check', {
+      length: metadataStr.length,
+      count: fileKeys?.length || 0,
+      sample: metadataStr.substring(0, 100),
+    });
     
     if (metadataStr.length > 500) {
-      console.error('[ERROR] Metadata exceeds 500 chars:', metadataStr.length);
+      logger.error('[Payment] Metadata exceeds limit', new Error('Metadata too large'), {
+        length: metadataStr.length,
+      });
       return NextResponse.json(
         {
           success: false,
@@ -44,14 +51,18 @@ export async function POST(request: NextRequest) {
       packageId,
       imageCount: imageCount.toString(),
       fileKeys: metadataStr || undefined,
+      serviceType: serviceType || 'restoration',
     });
+
+    // Track payment intent creation
+    Analytics.paymentIntentCreated(email, amount, packageId, imageCount);
 
     return NextResponse.json({
       success: true,
       data: paymentIntent,
     });
   } catch (error) {
-    console.error('Payment intent creation error:', error);
+    logger.error('[Payment] Intent creation error', error as Error);
     
     if (error instanceof z.ZodError) {
       return NextResponse.json(

@@ -27,15 +27,32 @@ export async function GET(request: NextRequest) {
             { email: session.user.email },
           ],
         },
+        include: {
+          jobs: {
+            include: {
+              images: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
+      });
+
+      // Transform orders to include image URLs from jobs
+      const transformedOrders = orders.map(order => {
+        const allImages = order.jobs.flatMap(job => job.images);
+        return {
+          ...order,
+          originalFiles: allImages.map(img => img.originalUrl).filter(Boolean) as string[],
+          restoredFiles: allImages.map(img => img.restoredUrl).filter(Boolean) as string[],
+        };
       });
 
       logger.info('Orders retrieved for OAuth user', {
         userId: session.user.id,
-        orderCount: orders.length,
+        orderCount: transformedOrders.length,
       });
 
-      return NextResponse.json({ orders });
+      return NextResponse.json({ orders: transformedOrders });
     }
 
     // Case 2: Guest user with email verification
@@ -58,15 +75,32 @@ export async function GET(request: NextRequest) {
 
       const orders = await prisma.order.findMany({
         where: { email: sanitizedEmail },
+        include: {
+          jobs: {
+            include: {
+              images: true,
+            },
+          },
+        },
         orderBy: { createdAt: 'desc' },
+      });
+
+      // Transform orders to include image URLs from jobs
+      const transformedOrders = orders.map(order => {
+        const allImages = order.jobs.flatMap(job => job.images);
+        return {
+          ...order,
+          originalFiles: allImages.map(img => img.originalUrl).filter(Boolean) as string[],
+          restoredFiles: allImages.map(img => img.restoredUrl).filter(Boolean) as string[],
+        };
       });
 
       logger.info('Orders retrieved for guest user', {
         email: sanitizedEmail,
-        orderCount: orders.length,
+        orderCount: transformedOrders.length,
       });
 
-      return NextResponse.json({ orders });
+      return NextResponse.json({ orders: transformedOrders });
     }
 
     return NextResponse.json(

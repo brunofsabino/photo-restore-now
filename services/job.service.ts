@@ -7,7 +7,7 @@
 
 import { RestorationJob, ImageFile, ImageStatus } from '@/types';
 import { getAIProvider } from '@/providers';
-import { uploadOriginalImage, uploadRestoredImage } from './storage.service';
+import { uploadOriginalImage, uploadRestoredImage, getPublicUrlFromKey } from './storage.service';
 import {
   sendOrderConfirmation,
   sendRestorationComplete,
@@ -88,7 +88,7 @@ export async function createJob(
 
   // Start processing (in background)
   processJob(jobId).catch(error => {
-    console.error(`Job ${jobId} processing error:`, error);
+    logger.error(`[Job] Job ${jobId} processing error`, error as Error);
   });
 
   return jobId;
@@ -142,7 +142,7 @@ export async function processJob(jobId: string): Promise<void> {
     });
 
     const aiProvider = getAIProvider();
-    console.log(`Processing job ${jobId} with ${aiProvider.name}`);
+    logger.info(`[Job] Processing ${jobId}`, { provider: aiProvider.name });
 
     // Process each image
     const restoredImages: ImageFile[] = [];
@@ -207,9 +207,9 @@ export async function processJob(jobId: string): Promise<void> {
           success = true;
         } catch (error) {
           retries++;
-          console.error(
-            `Error processing image ${image.id} (attempt ${retries}):`,
-            error
+          logger.error(
+            `[Job] Error processing image ${image.id} (attempt ${retries})`,
+            error as Error
           );
 
           if (retries < JOB_CONFIG.MAX_RETRIES) {
@@ -245,6 +245,27 @@ export async function processJob(jobId: string): Promise<void> {
     job.status = 'completed';
     job.completedAt = new Date();
 
+    // Update Order with completed files and status
+    if (job.orderId) {
+      const originalUrls = restoredImages.map(img => img.originalUrl);
+      const restoredUrls = restoredImages.map(img => img.restoredUrl!);
+
+      await prisma.order.update({
+        where: { id: job.orderId },
+        data: {
+          status: 'completed',
+          originalFiles: originalUrls,
+          restoredFiles: restoredUrls,
+          updatedAt: new Date(),
+        },
+      });
+
+      logger.info('Order updated with restored files', {
+        orderId: job.orderId,
+        restoredCount: restoredUrls.length,
+      });
+    }
+
     // Send completion email
     const downloadLinks = restoredImages.map(img => img.restoredUrl!);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
@@ -256,9 +277,9 @@ export async function processJob(jobId: string): Promise<void> {
       expiresAt,
     });
 
-    console.log(`Job ${jobId} completed successfully`);
+    logger.info(`[Job] Job ${jobId} completed successfully`);
   } catch (error) {
-    console.error(`Job ${jobId} failed:`, error);
+    logger.error(`[Job] Job ${jobId} failed`, error as Error);
 
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
@@ -387,9 +408,14 @@ export async function createJobFromWebhook(
     throw new Error(`File count mismatch: expected ${photoCount}, got ${fileKeys.length}`);
   }
 
-  // Reconstruct full URLs from keys
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  const fileUrls = fileKeys.map(key => `${baseUrl}/api/files/${key}`);
+  // Reconstruct full URLs from keys (supports both R2 and local storage)
+  const fileUrls = fileKeys.map(key => getPublicUrlFromKey(key));
+
+  logger.info('Reconstructed file URLs', {
+    sampleKey: fileKeys[0],
+    sampleUrl: fileUrls[0],
+    storage: process.env.USE_R2 === 'true' ? 'R2' : 'local',
+  });
 
   // Download images from URLs
   const images: Array<{ buffer: Buffer; filename: string; mimeType: string }> = [];

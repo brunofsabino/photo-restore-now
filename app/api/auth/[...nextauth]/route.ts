@@ -61,10 +61,10 @@ export const authOptions: NextAuthOptions = {
               data: { welcomeEmailSent: true }
             });
             
-            console.log(`Welcome email sent to ${user.email}`);
+            logger.info('[Auth] Welcome email sent', { email: user.email });
           }
         } catch (error) {
-          console.error('Error sending welcome email:', error);
+          logger.error('[Auth] Error sending welcome email', error as Error);
           // Don't block sign in if email fails
         }
       }

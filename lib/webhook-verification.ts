@@ -10,6 +10,16 @@ export async function verifyStripeWebhook(
   request: NextRequest
 ): Promise<{ valid: boolean; event?: any; error?: string }> {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+  const testMode = process.env.TEST_MODE === 'true';
+  
+  // Allow bypass in test mode with special header
+  const bypassHeader = request.headers.get('x-test-bypass');
+  if (testMode && bypassHeader === 'test_mode') {
+    logger.info('Webhook verification bypassed in TEST_MODE');
+    const body = await request.text();
+    const event = JSON.parse(body);
+    return { valid: true, event };
+  }
   
   if (!webhookSecret) {
     logger.error('Stripe webhook secret not configured');

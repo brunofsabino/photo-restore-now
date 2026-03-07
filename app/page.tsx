@@ -9,11 +9,8 @@ import { Sparkles, Clock, Shield, Heart, Star, User, LogOut } from 'lucide-react
 import { CartButton } from '@/components/CartButton';
 import { BeforeAfterSlider } from '@/components/BeforeAfterSlider';
 import { FadeIn } from '@/components/animations/FadeIn';
-import { AnimatedGradient } from '@/components/animations/AnimatedGradient';
-import { MeshGradient } from '@/components/animations/MeshGradient';
 import { ScrollDrivenPhone } from '@/components/animations/ScrollDrivenPhone';
 import { ParallaxSection } from '@/components/animations/ParallaxSection';
-import { AnimatedLines } from '@/components/animations/AnimatedLines';
 
 export default function HomePage() {
   const { data: session, status } = useSession();
@@ -38,9 +35,9 @@ export default function HomePage() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
+    <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+      <nav className="border-b border-gray-200 bg-white sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link href={APP_ROUTES.HOME} className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
             PhotoRestoreNow
@@ -90,14 +87,9 @@ export default function HomePage() {
         </div>
       </nav>
 
-      {/* Hero Section with Mesh Gradient */}
-      <section className="relative overflow-hidden">
-        {/* Animated Mesh Gradient Background */}
-        <div className="absolute inset-0 opacity-30">
-          <MeshGradient />
-        </div>
-        
-        <div className="container relative z-10 mx-auto px-4 py-16 md:py-24">
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 to-white">
+        <div className="container mx-auto px-4 py-16 md:py-24">
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <FadeIn direction="down" delay={0.1}>
@@ -200,15 +192,12 @@ export default function HomePage() {
       </section>
 
       {/* Scroll-Driven Phone Section */}
-      <section className="relative bg-gradient-to-b from-white to-gray-50 overflow-hidden">
-        <div className="absolute inset-0 opacity-20">
-          <AnimatedLines density={40} color="#6366f1" opacity={0.4} />
-        </div>
+      <section className="relative bg-gray-50 overflow-hidden">
         <ScrollDrivenPhone />
       </section>
 
       {/* Features Section */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white relative">
+      <section className="py-16 md:py-24 bg-white relative">
         <div className="container mx-auto px-4">
           <FadeIn direction="up">
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-4">
@@ -354,11 +343,8 @@ export default function HomePage() {
       </section>
 
       {/* Testimonials */}
-      <section className="py-16 md:py-24 bg-gradient-to-b from-gray-50 to-white relative overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <AnimatedLines density={30} color="#8b5cf6" opacity={0.3} />
-        </div>
-        <div className="container relative z-10 mx-auto px-4">
+      <section className="py-16 md:py-24 bg-gray-50 relative overflow-hidden">
+        <div className="container mx-auto px-4">
           <FadeIn direction="up">
             <h2 className="text-3xl md:text-5xl font-bold text-center mb-12">
               What Our Customers Say
@@ -409,10 +395,8 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="py-20 relative overflow-hidden">
-        <AnimatedGradient />
-        
-        <div className="container mx-auto px-4 text-center relative z-10">
+      <section className="py-20 relative overflow-hidden bg-gradient-to-br from-blue-600 to-blue-700">
+        <div className="container mx-auto px-4 text-center">
           <FadeIn direction="up">
             <h2 className="text-3xl md:text-5xl font-bold mb-6 text-white">
               Ready to Restore Your Memories?

@@ -10,6 +10,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { uploadFile } from '@/services/storage.service';
 import { validateImageFile, sanitizeFileName } from '@/lib/file-validation';
 import { logger } from '@/lib/logger';
+import { Analytics } from '@/lib/analytics';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +25,15 @@ export async function POST(request: NextRequest) {
     }
 
     logger.info('Uploading files', { count: files.length });
+
+    // Get email from form data (if available)
+    const email = formData.get('email') as string | null;
+    const totalSize = files.reduce((sum, file) => sum + file.size, 0);
+
+    // Track upload start
+    if (email) {
+      Analytics.uploadStarted(email, files.length, totalSize);
+    }
 
     const uploadedFiles = [];
 
@@ -64,6 +74,12 @@ export async function POST(request: NextRequest) {
         fileName: file.name, 
         url: result.url 
       });
+    }
+
+    // Track upload completion
+    if (email) {
+      const storageType = process.env.USE_R2 === 'true' ? 'R2' : 'local';
+      Analytics.uploadCompleted(email, uploadedFiles.length, storageType);
     }
 
     return NextResponse.json({

@@ -8,6 +8,7 @@
 import { Resend } from 'resend';
 import { EmailOptions, RestorationCompleteEmail } from '@/types';
 import { EMAIL_SUBJECTS } from '@/lib/constants';
+import { Analytics } from '@/lib/analytics';
 
 if (!process.env.RESEND_API_KEY) {
   console.warn('RESEND_API_KEY is not configured. Email sending will fail.');
@@ -31,13 +32,16 @@ export async function sendEmail(options: EmailOptions): Promise<boolean> {
 
     if (error) {
       console.error('Resend email error:', error);
+      Analytics.emailSent('generic', options.to, false);
       return false;
     }
 
     console.log('Email sent successfully:', data?.id);
+    Analytics.emailSent('generic', options.to, true);
     return true;
   } catch (error) {
     console.error('Email sending error:', error);
+    Analytics.emailSent('generic', options.to, false);
     return false;
   }
 }

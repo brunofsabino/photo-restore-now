@@ -49,7 +49,7 @@ export async function createPaymentIntent(
       clientSecret: paymentIntent.client_secret || '',
     };
   } catch (error) {
-    console.error('Stripe payment intent creation error:', error);
+    logger.error('[Payment] Stripe intent creation error', error as Error);
     throw new Error('Failed to create payment intent');
   }
 }
@@ -64,7 +64,7 @@ export async function getPaymentIntent(
     const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
     return paymentIntent;
   } catch (error) {
-    console.error('Error retrieving payment intent:', error);
+    logger.error('[Payment] Error retrieving intent', error as Error, { paymentIntentId });
     return null;
   }
 }
@@ -89,7 +89,7 @@ export async function confirmPaymentStatus(
       return 'pending';
     }
   } catch (error) {
-    console.error('Error confirming payment status:', error);
+    logger.error('[Payment] Error confirming status', error as Error, { paymentIntentId });
     return 'failed';
   }
 }
@@ -132,7 +132,7 @@ export async function createCheckoutSession(
       url: session.url || '',
     };
   } catch (error) {
-    console.error('Stripe checkout session creation error:', error);
+    logger.error('[Payment] Checkout session creation error', error as Error);
     throw new Error('Failed to create checkout session');
   }
 }
@@ -153,7 +153,7 @@ export function verifyWebhookSignature(
   try {
     return stripe.webhooks.constructEvent(payload, signature, webhookSecret);
   } catch (error) {
-    console.error('Webhook signature verification failed:', error);
+    logger.error('[Payment] Webhook verification failed', error as Error);
     throw new Error('Invalid webhook signature');
   }
 }
@@ -165,8 +165,10 @@ export async function handleSuccessfulPayment(
   paymentIntent: Stripe.PaymentIntent
 ): Promise<void> {
   // This would typically update database, trigger job processing, etc.
-  console.log('Payment succeeded:', paymentIntent.id);
-  console.log('Metadata:', paymentIntent.metadata);
+  logger.info('[Payment] Payment succeeded', {
+    paymentIntentId: paymentIntent.id,
+    metadata: paymentIntent.metadata,
+  });
 }
 
 /**
@@ -186,7 +188,7 @@ export async function refundPayment(
 
     return refund.status === 'succeeded';
   } catch (error) {
-    console.error('Refund error:', error);
+    logger.error('[Payment] Refund error', error as Error, { paymentIntentId });
     return false;
   }
 }

@@ -10,6 +10,7 @@ import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { UploadResult } from '@/types';
 import { STORAGE_PATHS } from '@/lib/constants';
 import { sanitizeFilename } from '@/lib/utils';
+import { logger } from '@/lib/logger';
 
 // Check if R2 is configured
 const isR2Configured = () => {
@@ -30,7 +31,7 @@ const getR2Client = () => {
   }
 
   if (!r2Client) {
-    console.log('[R2] Initializing client...', {
+    logger.info('[R2] Initializing client', {
       accountId: process.env.R2_ACCOUNT_ID,
       bucket: process.env.R2_BUCKET_NAME,
       endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`
@@ -63,7 +64,7 @@ export async function uploadFile(
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
   try {
-    console.log('[R2] Starting upload...', { filename, folder, size: buffer.length });
+    logger.info('[R2] Starting upload', { filename, folder, size: buffer.length });
     
     const client = getR2Client();
     const sanitizedFilename = sanitizeFilename(filename);
@@ -73,7 +74,7 @@ export async function uploadFile(
     const ext = sanitizedFilename.split('.').pop()?.toLowerCase() || 'jpg';
     const key = `${STORAGE_PATHS[folder]}/${randomId}.${ext}`;
 
-    console.log('[R2] Uploading to key:', key);
+    logger.info('[R2] Uploading to key', { key });
 
     const command = new PutObjectCommand({
       Bucket: process.env.R2_BUCKET_NAME!,
@@ -84,7 +85,7 @@ export async function uploadFile(
 
     await client.send(command);
 
-    console.log('[R2] Upload successful!', { key });
+    logger.info('[R2] Upload successful', { key });
 
     // Generate public URL (if R2_PUBLIC_URL is set)
     const publicUrl = process.env.R2_PUBLIC_URL 
@@ -97,12 +98,7 @@ export async function uploadFile(
       bucket: process.env.R2_BUCKET_NAME!,
     };
   } catch (error) {
-    console.error('[R2] Upload error:', error);
-    console.error('[R2] Error details:', {
-      name: (error as Error).name,
-      message: (error as Error).message,
-      stack: (error as Error).stack,
-    });
+    logger.error('[R2] Upload error', error as Error, { filename, folder });
     throw new Error('Failed to upload file to R2 storage');
   }
 }
@@ -125,7 +121,7 @@ export async function getSignedDownloadUrl(
     const url = await getSignedUrl(client, command, { expiresIn });
     return url;
   } catch (error) {
-    console.error('Error generating signed URL:', error);
+    logger.error('[R2] Error generating signed URL', error as Error, { key });
     throw new Error('Failed to generate download URL');
   }
 }
@@ -156,7 +152,7 @@ export async function downloadFile(key: string): Promise<Buffer> {
 
     return Buffer.concat(chunks);
   } catch (error) {
-    console.error('R2 download error:', error);
+    logger.error('[R2] Download error', error as Error, { key });
     throw new Error('Failed to download file from R2');
   }
 }
@@ -175,7 +171,7 @@ export async function deleteFile(key: string): Promise<void> {
 
     await client.send(command);
   } catch (error) {
-    console.error('R2 delete error:', error);
+    logger.error('[R2] Delete error', error as Error, { key });
     throw new Error('Failed to delete file from R2');
   }
 }

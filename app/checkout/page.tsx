@@ -189,6 +189,7 @@ export default function CheckoutPage() {
         // Extract only keys (not full URLs) to minimize metadata size
         // Keys are like "original/1234-filename.jpg" instead of full URL
         const keys = fileUrls.map(f => f.key);
+        const serviceType = firstItem?.serviceType || 'restoration';
 
         const response = await fetch('/api/payment/create-intent', {
           method: 'POST',
@@ -199,6 +200,7 @@ export default function CheckoutPage() {
             packageId: packageId,
             imageCount: totalPhotos,
             fileKeys: keys,
+            serviceType,
           }),
         });
 

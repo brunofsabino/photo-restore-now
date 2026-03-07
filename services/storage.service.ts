@@ -10,6 +10,8 @@ import path from 'path';
 import { UploadResult } from '@/types';
 import { STORAGE_PATHS } from '@/lib/constants';
 import { sanitizeFilename } from '@/lib/utils';
+import { Analytics } from '@/lib/analytics';
+import { ErrorTracker } from '@/lib/error-tracking';
 import * as R2Storage from './r2-storage.service';
 
 // Local storage directory (for development)
@@ -36,6 +38,7 @@ export async function uploadFile(
   folder: keyof typeof STORAGE_PATHS = 'ORIGINAL_IMAGES',
   contentType: string = 'image/jpeg'
 ): Promise<UploadResult> {
+  const startTime = Date.now();
   // Check if R2 is configured
   const isR2Available = process.env.R2_ACCOUNT_ID && 
                          process.env.R2_ACCESS_KEY_ID && 
@@ -43,40 +46,51 @@ export async function uploadFile(
 
   // Use R2 in production, or in development if USE_R2=true
   const useR2 = isR2Available && (process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true');
+  const storageType = useR2 ? 'r2' : 'local';
+  let success = false;
+  let result: UploadResult;
   
-  if (useR2) {
-    console.log('[STORAGE] Using R2 cloud storage');
-    return R2Storage.uploadFile(buffer, filename, folder, contentType);
-  }
-
-  // Local storage fallback (development)
   try {
-    // Generate short unique ID (8 chars) instead of timestamp + long filename
-    const randomId = Math.random().toString(36).substring(2, 10);
-    const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
-    const shortKey = `${STORAGE_PATHS[folder]}/${randomId}.${ext}`;
-    const filePath = path.join(STORAGE_DIR, shortKey);
+    if (useR2) {
+      console.log('[STORAGE] Using R2 cloud storage');
+      result = await R2Storage.uploadFile(buffer, filename, folder, contentType);
+      success = true;
+    } else {
+      // Local storage fallback (development)
+      // Generate short unique ID (8 chars) instead of timestamp + long filename
+      const randomId = Math.random().toString(36).substring(2, 10);
+      const ext = filename.split('.').pop()?.toLowerCase() || 'jpg';
+      const shortKey = `${STORAGE_PATHS[folder]}/${randomId}.${ext}`;
+      const filePath = path.join(STORAGE_DIR, shortKey);
 
-    // Ensure directory exists
-    const dir = path.dirname(filePath);
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
+      // Ensure directory exists
+      const dir = path.dirname(filePath);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+
+      // Write file
+      fs.writeFileSync(filePath, buffer);
+
+      // Generate URL using the API route
+      const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${shortKey}`;
+
+      result = {
+        url,
+        key: shortKey,
+        bucket: 'local',
+      };
+      success = true;
     }
-
-    // Write file
-    fs.writeFileSync(filePath, buffer);
-
-    // Generate URL using the API route
-    const url = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/api/files/${shortKey}`;
-
-    return {
-      url,
-      key: shortKey,
-      bucket: 'local',
-    };
+    
+    return result;
   } catch (error) {
     console.error('Storage upload error:', error);
+    await ErrorTracker.storage(error as Error, { folder, filename });
     throw new Error('Failed to upload file to storage');
+  } finally {
+    const duration = Date.now() - startTime;
+    Analytics.storagePerformance('upload', storageType, duration, buffer.length, success);
   }
 }
 
@@ -192,6 +206,30 @@ export async function uploadRestoredImage(
 }
 
 /**
+ * Get public URL from storage key
+ * Automatically detects if R2 or local storage is being used
+ */
+export function getPublicUrlFromKey(key: string): string {
+  // Check if R2 is configured
+  const isR2Available = process.env.R2_ACCOUNT_ID && 
+                         process.env.R2_ACCESS_KEY_ID && 
+                         process.env.R2_BUCKET_NAME &&
+                         process.env.R2_PUBLIC_URL;
+
+  // Use R2 in production, or in development if USE_R2=true
+  const useR2 = isR2Available && (process.env.NODE_ENV === 'production' || process.env.USE_R2 === 'true');
+  
+  if (useR2) {
+    // R2 public URL
+    return `${process.env.R2_PUBLIC_URL}/${key}`;
+  }
+  
+  // Local storage URL
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  return `${baseUrl}/api/files/${key}`;
+}
+
+/**
  * Storage service object for convenient imports
  */
 export const storageService = {
@@ -202,4 +240,5 @@ export const storageService = {
   deleteFiles,
   uploadOriginalImage,
   uploadRestoredImage,
+  getPublicUrlFromKey,
 };

@@ -114,9 +114,9 @@ export const ScrollDrivenPhone = () => {
       <div className="container mx-auto px-4">
         <div className="grid md:grid-cols-2 gap-16">
           
-          {/* Photo Album - Scrolls with page */}
-          <div className="relative">
-            <div className="w-full max-w-lg mx-auto">
+          {/* Photo Album - STICKY: Stays fixed while scrolling */}
+          <div>
+            <div className="sticky top-24 w-full max-w-lg mx-auto">
               {/* Vintage Photo Album */}
               <div className="relative">
                 {/* Album Cover */}

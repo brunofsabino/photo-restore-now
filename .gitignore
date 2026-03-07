@@ -47,6 +47,22 @@ web_modules/
 # TypeScript cache
 *.tsbuildinfo
 
+# Test and debug scripts
+audit-orders.js
+auto-trigger-webhook.js
+check-jobs.js
+check-order.js
+check-orders.js
+clear-all-orders.js
+fix-failed-orders.js
+fix-last-order.js
+fix-processing.js
+fix-stuck-orders.js
+process-last-payment.js
+process-payment.js
+test-e2e-flow.js
+update-order.js
+
 # Optional npm cache directory
 .npm
 
