@@ -70,8 +70,7 @@ export class VanceAIProvider implements IAIProvider {
       return restoredBuffer;
 
     } catch (error: any) {
-      logger.error('[VanceAI] Restoration failed', {
-        error: error.message,
+      logger.error('[VanceAI] Restoration failed', error instanceof Error ? error : new Error(error?.message || 'Unknown error'), {
         stack: error.stack
       });
       throw new Error(`VanceAI restoration failed: ${error.message}`);
@@ -113,8 +112,7 @@ export class VanceAIProvider implements IAIProvider {
       return uid;
 
     } catch (error: any) {
-      logger.error('[VanceAI] Upload error', {
-        error: error.message,
+      logger.error('[VanceAI] Upload error', error instanceof Error ? error : new Error(error?.message || 'Unknown error'), {
         response: error.response?.data
       });
 
@@ -210,8 +208,7 @@ export class VanceAIProvider implements IAIProvider {
       return transId;
 
     } catch (error: any) {
-      logger.error('[VanceAI] Transform error', {
-        error: error.message,
+      logger.error('[VanceAI] Transform error', error instanceof Error ? error : new Error(error?.message || 'Unknown error'), {
         response: error.response?.data
       });
       throw new Error(`Transform failed: ${error.message}`);
@@ -308,8 +305,7 @@ export class VanceAIProvider implements IAIProvider {
       return buffer;
 
     } catch (error: any) {
-      logger.error('[VanceAI] Download error', {
-        error: error.message,
+      logger.error('[VanceAI] Download error', error instanceof Error ? error : new Error(error?.message || 'Unknown error'), {
         response: error.response?.data
       });
       throw new Error(`Download failed: ${error.message}`);

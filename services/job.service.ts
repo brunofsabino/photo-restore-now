@@ -443,9 +443,8 @@ export async function createJobFromWebhook(
         mimeType: contentType,
       });
     } catch (error) {
-      logger.error('Error downloading image', {
+      logger.error('Error downloading image', error instanceof Error ? error : new Error('Unknown error'), {
         url,
-        error: error instanceof Error ? error.message : 'Unknown error',
       });
       throw error;
     }
@@ -484,9 +483,8 @@ export async function createJobFromWebhook(
 
   // Process job asynchronously
   processJob(jobId).catch(error => {
-    logger.error('Error processing job from webhook', {
+    logger.error('Error processing job from webhook', error instanceof Error ? error : new Error('Unknown error'), {
       jobId,
-      error: error instanceof Error ? error.message : 'Unknown error',
     });
   });
 

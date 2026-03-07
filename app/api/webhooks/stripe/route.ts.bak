@@ -155,8 +155,10 @@ export async function POST(request: NextRequest) {
                 jobId: job.id,
               });
             } catch (jobError) {
-              logger.error('Error queuing job via Inngest', jobError instanceof Error ? jobError : new Error(String(jobError)), {
+              logger.error('Error queuing job via Inngest', {
                 orderId: order.id,
+                error: jobError instanceof Error ? jobError.message : String(jobError),
+                stack: jobError instanceof Error ? jobError.stack : undefined,
               });
               // Don't fail the webhook - order was created successfully
             }
