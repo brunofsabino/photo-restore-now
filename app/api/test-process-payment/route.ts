@@ -13,7 +13,7 @@ import { PrismaClient } from '@prisma/client';
 import Stripe from 'stripe';
 
 const prisma = new PrismaClient();
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2024-11-20.acacia' });
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, { apiVersion: '2023-10-16' });
 
 export async function POST(request: NextRequest) {
   // Only allow in development
@@ -168,7 +168,7 @@ export async function POST(request: NextRequest) {
       for (const image of job.images) {
         try {
           if (!image.originalUrl) {
-            logger.error('[TEST] No original URL', { imageId: image.id });
+            logger.error('[TEST] No original URL', undefined, { imageId: image.id });
             failCount++;
             continue;
           }

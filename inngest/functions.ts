@@ -247,7 +247,7 @@ export const handleRestorationFailure = inngest.createFunction(
 
     const errorMessage = errorData?.message || 'Unknown error';
 
-    logger.error('[Inngest] Restoration job failed after retries', {
+    logger.error('[Inngest] Restoration job failed after retries', undefined, {
       jobId,
       orderId,
       error: errorMessage,
