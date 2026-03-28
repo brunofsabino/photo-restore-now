@@ -35,7 +35,7 @@ export default function PricingPage() {
     setIsAuthenticated(hasAuth);
   }, [session]);
 
-  const handleChoosePackage (packageId: string) => {
+  const handleChoosePackage = (packageId: string) => {
     setSelectedPackage(packageId);
     
     // If user is already authenticated (guest, Google, or Facebook), go to service selection

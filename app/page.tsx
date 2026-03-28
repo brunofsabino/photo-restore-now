@@ -184,7 +184,7 @@ export default function HomePage() {
       </section>
 
       {/* Scroll-Driven Phone Section */}
-      <section className="relative bg-gray-50 overflow-hidden">
+      <section className="relative bg-gray-50">
         <div className="text-center pt-16 pb-4">
           <FadeIn direction="up">
             <span className="text-xs font-semibold tracking-widest uppercase text-primary mb-3 block">How It Feels</span>
