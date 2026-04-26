@@ -17,17 +17,19 @@ import * as R2Storage from './r2-storage.service';
 // Local storage directory (for development)
 const STORAGE_DIR = path.join(process.cwd(), 'uploads');
 
-// Ensure upload directories exist
-if (!fs.existsSync(STORAGE_DIR)) {
-  fs.mkdirSync(STORAGE_DIR, { recursive: true });
-}
-
-Object.values(STORAGE_PATHS).forEach(folder => {
-  const dir = path.join(STORAGE_DIR, folder);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+// Ensure upload directories exist (only in development - Vercel filesystem is read-only)
+if (process.env.NODE_ENV !== 'production') {
+  if (!fs.existsSync(STORAGE_DIR)) {
+    fs.mkdirSync(STORAGE_DIR, { recursive: true });
   }
-});
+
+  Object.values(STORAGE_PATHS).forEach(folder => {
+    const dir = path.join(STORAGE_DIR, folder);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+  });
+}
 
 /**
  * Upload a file - automatically uses R2 if configured, otherwise local storage
