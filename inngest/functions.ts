@@ -22,11 +22,9 @@ const prisma = new PrismaClient();
 export const processRestorationJob = inngest.createFunction(
   {
     id: 'process-restoration-job',
-    name: 'Process Photo Restoration Job',
-    // Retry configuration
     retries: 3,
+    triggers: [{ event: 'photo/restoration.requested' }],
   },
-  { event: 'photo/restoration.requested' },
   async ({ event, step }) => {
     const { jobId, orderId, email, fileKeys, packageId, serviceType } = event.data;
 
@@ -232,9 +230,8 @@ export const processRestorationJob = inngest.createFunction(
 export const handleRestorationFailure = inngest.createFunction(
   {
     id: 'handle-restoration-failure',
-    name: 'Handle Restoration Failure',
+    triggers: [{ event: 'inngest/function.failed' }],
   },
-  { event: 'inngest/function.failed' },
   async ({ event }) => {
     // Only handle our restoration function failures
     if (event.data.function_id !== 'process-restoration-job') {
