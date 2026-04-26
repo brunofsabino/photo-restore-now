@@ -107,7 +107,12 @@ export const processRestorationJob = inngest.createFunction(
 
           // Download original
           logger.info('[Inngest] Downloading original image', { url: image.originalUrl });
-          const originalBuffer = await downloadFile(image.originalUrl);
+          // Extract R2 key from full URL if needed
+          const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
+          const fileKey = image.originalUrl.startsWith(r2PublicUrl)
+            ? image.originalUrl.replace(r2PublicUrl + '/', '')
+            : image.originalUrl;
+          const originalBuffer = await downloadFile(fileKey);
 
           // Restore with AI (using serviceType from job)
           const aiProvider = AIProviderFactory.getProvider(undefined, serviceType as any);
