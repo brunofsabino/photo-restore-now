@@ -129,9 +129,9 @@ export async function POST(request: NextRequest) {
                   images: {
                     create: fileKeys.map((key, index) => ({
                       originalName: `image_${index + 1}.jpg`,
-                      size: 0, // Will be updated during processing
+                      size: 0,
                       mimeType: 'image/jpeg',
-                      originalUrl: '', // Will be updated by Inngest
+                      originalUrl: `${process.env.R2_PUBLIC_URL}/${key}`,
                     })),
                   },
                 },
