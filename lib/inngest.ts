@@ -3,7 +3,7 @@
  * Handles background job processing with retries and monitoring
  */
 
-import { Inngest, EventSchemas } from 'inngest';
+import { Inngest } from 'inngest';
 
 // Define event schemas for type safety
 type Events = {
@@ -43,10 +43,8 @@ type Events = {
 };
 
 // Create Inngest client
-export const inngest = new Inngest({
+export const inngest = new Inngest<Events>({
   id: 'photo-restore-now',
-  name: 'PhotoRestoreNow',
-  schemas: new EventSchemas().fromRecord<Events>(),
   // Event key for authentication (only needed in production)
   eventKey: process.env.INNGEST_EVENT_KEY,
 });
