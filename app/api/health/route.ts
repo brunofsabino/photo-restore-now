@@ -11,5 +11,6 @@ export async function GET(request: NextRequest) {
     env: process.env.NODE_ENV,
     aiProvider: process.env.AI_PROVIDER,
     r2Storage: process.env.USE_R2 === 'true',
+    inngestConfigured: !!(process.env.INNGEST_EVENT_KEY && process.env.INNGEST_SIGNING_KEY),
   });
 }
