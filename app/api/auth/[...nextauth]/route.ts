@@ -5,6 +5,7 @@ import FacebookProvider from "next-auth/providers/facebook"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import { sendWelcomeEmail } from "@/services/email.service"
+import { logger } from "@/lib/logger"
 
 const prisma = new PrismaClient()
 
@@ -38,7 +39,7 @@ export const authOptions: NextAuthOptions = {
   ],
   pages: {
     signIn: '/auth/signin',
-    error: '/auth/error',
+    error: '/auth/signin',
   },
   callbacks: {
     async signIn({ user, account, profile, isNewUser }) {
