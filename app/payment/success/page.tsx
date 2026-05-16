@@ -125,8 +125,8 @@ function PaymentSuccessContent() {
           <div className="text-center pt-4 border-t border-gray-200">
             <p className="text-sm text-gray-600">
               Need help? Contact us at{' '}
-              <a href="mailto:support@photorestorenow.com" className="text-blue-600 hover:underline font-medium">
-                support@photorestorenow.com
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}`} className="text-blue-600 hover:underline font-medium">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}
               </a>
             </p>
           </div>

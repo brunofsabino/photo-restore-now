@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY)
+const FROM_EMAIL = `PhotoRestoreNow <${process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev'}>`
 
 export async function POST(request: NextRequest) {
   if (process.env.NODE_ENV === 'production') {
@@ -20,7 +21,7 @@ export async function POST(request: NextRequest) {
     switch (type) {
       case 'confirmation':
         result = await resend.emails.send({
-          from: 'PhotoRestoreNow <onboarding@resend.dev>',
+          from: FROM_EMAIL,
           to: email,
           subject: '✅ Order Confirmation - PhotoRestoreNow',
           html: `
@@ -114,7 +115,7 @@ export async function POST(request: NextRequest) {
 
       case 'complete':
         result = await resend.emails.send({
-          from: 'PhotoRestoreNow <onboarding@resend.dev>',
+          from: FROM_EMAIL,
           to: email,
           subject: '🎉 Your Restored Photos Are Ready! - PhotoRestoreNow',
           html: `
@@ -212,7 +213,7 @@ export async function POST(request: NextRequest) {
 
       case 'welcome':
         result = await resend.emails.send({
-          from: 'PhotoRestoreNow <onboarding@resend.dev>',
+          from: FROM_EMAIL,
           to: email,
           subject: '👋 Welcome to PhotoRestoreNow!',
           html: `
@@ -318,7 +319,7 @@ export async function POST(request: NextRequest) {
 
       default:
         result = await resend.emails.send({
-          from: 'PhotoRestoreNow <onboarding@resend.dev>',
+          from: FROM_EMAIL,
           to: email,
           subject: '🧪 Test Email - PhotoRestoreNow',
           html: `

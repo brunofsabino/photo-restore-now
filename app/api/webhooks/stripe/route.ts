@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
               const fileKeys = paymentIntent.metadata.fileKeys.split(',');
               const packageId = paymentIntent.metadata.packageId || '1-photo';
               const rawServiceType = paymentIntent.metadata.serviceType;
-              const validServiceTypes = ['restoration', 'colorization', 'restoration-colorization'];
+              const validServiceTypes = ['restoration', 'colorization', 'restoration-colorization', 'deep-restoration'];
               const serviceType = validServiceTypes.includes(rawServiceType) ? rawServiceType : 'restoration';
               
               logger.info('Queuing restoration job via Inngest', {

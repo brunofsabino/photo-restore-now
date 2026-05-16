@@ -113,7 +113,7 @@ function SelectServiceContent() {
         </div>
 
         {/* Service Options */}
-        <div className="grid md:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {SERVICE_OPTIONS.map((service) => {
             const price = calculateServicePrice(packageInfo.basePrice, service.id);
             const pricePerPhoto = Math.round(price / packageInfo.photoCount);
@@ -178,7 +178,7 @@ function SelectServiceContent() {
             <CardTitle>What's included in every service</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid md:grid-cols-3 gap-6 text-sm">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
               <div>
                 <h4 className="font-semibold mb-3 text-gray-700">🔧 Photo Restoration</h4>
                 <ul className="space-y-2 text-gray-600">
@@ -237,6 +237,28 @@ function SelectServiceContent() {
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
                     <span>3-stage AI pipeline</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Automatic face enhancement</span>
+                  </li>
+                </ul>
+              </div>
+
+              <div>
+                <h4 className="font-semibold mb-3 text-gray-700">🛠️ Deep Restoration</h4>
+                <ul className="space-y-2 text-gray-600">
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>AI inpainting fills fold marks & creases</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>Repairs large missing or white areas</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
+                    <span>4-stage pipeline (longest, best results)</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />

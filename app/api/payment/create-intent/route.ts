@@ -15,7 +15,7 @@ const requestSchema = z.object({
   packageId: z.string(),
   imageCount: z.number().positive(),
   fileKeys: z.array(z.string()).optional(),
-  serviceType: z.enum(['restoration', 'colorization', 'restoration-colorization']).optional(),
+  serviceType: z.enum(['restoration', 'colorization', 'restoration-colorization', 'deep-restoration']).optional(),
 });
 
 export async function POST(request: NextRequest) {
@@ -50,8 +50,8 @@ export async function POST(request: NextRequest) {
     const paymentIntent = await createPaymentIntent(amount, email, {
       packageId,
       imageCount: imageCount.toString(),
-      fileKeys: metadataStr || undefined,
-      serviceType: serviceType || 'restoration',
+      ...(metadataStr ? { fileKeys: metadataStr } : {}),
+      serviceType: serviceType ?? 'restoration',
     });
 
     // Track payment intent creation

@@ -472,8 +472,8 @@ export default function DashboardPage() {
                       <p className="text-sm text-red-700">
                         There was an issue with this order. Our team has been notified and will
                         reach out within 24 hours. If you don't hear back, email{' '}
-                        <a href="mailto:support@photorestorenow.com" className="underline font-semibold">
-                          support@photorestorenow.com
+                        <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}`} className="underline font-semibold">
+                          {process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}
                         </a>
                       </p>
                     </div>

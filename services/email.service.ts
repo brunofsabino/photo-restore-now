@@ -14,6 +14,7 @@ if (!process.env.RESEND_API_KEY) {
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 const fromEmailAddress = process.env.RESEND_FROM_EMAIL || 'noreply@photorestorenow.com';
+const supportEmail = process.env.SUPPORT_EMAIL || fromEmailAddress;
 const fromEmail = `PhotoRestoreNow <${fromEmailAddress}>`;
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://photorestorenow.com';
 
@@ -179,8 +180,8 @@ export async function sendWelcomeEmail(
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       Questions? Reply to this email or write to
-      <a href="mailto:support@photorestorenow.com"
-         style="color:#2563eb;text-decoration:none;">support@photorestorenow.com</a>
+      <a href="mailto:${supportEmail}"
+         style="color:#2563eb;text-decoration:none;">${supportEmail}</a>
     </p>
   `;
 
@@ -441,8 +442,8 @@ export async function sendRestorationFailed(
 
     <p style="margin:0;color:#9ca3af;font-size:13px;text-align:center;">
       You can also contact us directly at
-      <a href="mailto:support@photorestorenow.com"
-         style="color:#2563eb;text-decoration:none;">support@photorestorenow.com</a>
+      <a href="mailto:${supportEmail}"
+         style="color:#2563eb;text-decoration:none;">${supportEmail}</a>
     </p>
   `;
 

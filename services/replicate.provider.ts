@@ -4,9 +4,14 @@
  *   restoration:              GFPGAN → Real-ESRGAN
  *   colorization:             DeOldify → GFPGAN
  *   restoration-colorization: GFPGAN → DeOldify → Real-ESRGAN
+ *   deep-restoration:         BringingOldPhotos (inpainting) → GFPGAN → Real-ESRGAN
  *
  * Face enhancement (GFPGAN) runs automatically on every pipeline —
  * users don't need to know about it.
+ *
+ * BringingOldPhotos: Microsoft Research model that auto-detects fold marks,
+ * creases, and tears — no user-drawn mask required.
+ * Replicate: codeslake/bringing-old-photos-back-to-life
  */
 
 import axios from 'axios';
@@ -19,9 +24,12 @@ const REPLICATE_API = 'https://api.replicate.com/v1';
 // Model identifiers — called via /models/{owner}/{name}/predictions
 // which always uses the latest deployed version (no hash needed)
 const MODELS = {
-  GFPGAN:     { owner: 'tencentarc',     name: 'gfpgan' },
-  REAL_ESRGAN: { owner: 'nightmareai',   name: 'real-esrgan' },
-  DEOLDIFY:   { owner: 'arielreplicate', name: 'deoldify_image' },
+  GFPGAN:           { owner: 'tencentarc',     name: 'gfpgan' },
+  REAL_ESRGAN:      { owner: 'nightmareai',    name: 'real-esrgan' },
+  DEOLDIFY:         { owner: 'arielreplicate', name: 'deoldify_image' },
+  // Microsoft Research "Bringing Old Photos Back to Life" — blind inpainting:
+  // auto-detects scratches, fold marks, creases without requiring a user mask
+  BRINGING_OLD_PHOTOS: { owner: 'codeslake', name: 'bringing-old-photos-back-to-life' },
 };
 
 const POLL_INTERVAL_MS = 4000;
@@ -71,6 +79,12 @@ export class ReplicateProvider implements IAIProvider {
         currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runDeOldify(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
+
+      } else if (this.serviceType === 'deep-restoration') {
+        // Inpainting first: auto-detects and fills fold marks, creases, tears
+        currentUrl = await this.runBringingOldPhotos(currentUrl);
+        currentUrl = await this.runGFPGAN(currentUrl);
+        currentUrl = await this.runRealESRGAN(currentUrl);
       }
 
       const resultBuffer = await this.downloadUrl(currentUrl);
@@ -116,6 +130,14 @@ export class ReplicateProvider implements IAIProvider {
     return this.runPrediction(MODELS.DEOLDIFY, {
       input_image: imageUrl,
       render_factor: 35,
+    });
+  }
+
+  private async runBringingOldPhotos(imageUrl: string): Promise<string> {
+    logger.info('[Replicate] Running BringingOldPhotos (fold/crease inpainting)');
+    return this.runPrediction(MODELS.BRINGING_OLD_PHOTOS, {
+      image: imageUrl,
+      HR: true, // high-resolution mode
     });
   }
 

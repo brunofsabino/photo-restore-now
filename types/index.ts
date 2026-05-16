@@ -8,7 +8,7 @@
 
 export type PackageType = '1-photo' | '3-photos' | '5-photos' | '10-photos';
 
-export type ServiceType = 'restoration' | 'colorization' | 'restoration-colorization';
+export type ServiceType = 'restoration' | 'colorization' | 'restoration-colorization' | 'deep-restoration';
 
 export interface ServiceOption {
   id: ServiceType;

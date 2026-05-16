@@ -92,8 +92,8 @@ export default function PrivacyPage() {
             <h2 className="text-2xl font-semibold mb-4">Contact Us</h2>
             <p>
               If you have questions about this Privacy Policy, please contact us at:{' '}
-              <a href="mailto:privacy@photorestorenow.com" className="text-primary hover:underline">
-                privacy@photorestorenow.com
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}`} className="text-primary hover:underline">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}
               </a>
             </p>
           </section>

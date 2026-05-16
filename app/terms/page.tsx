@@ -97,8 +97,8 @@ export default function TermsPage() {
             <h2 className="text-2xl font-semibold mb-4">Contact</h2>
             <p>
               For questions about these Terms of Service, contact:{' '}
-              <a href="mailto:legal@photorestorenow.com" className="text-primary hover:underline">
-                legal@photorestorenow.com
+              <a href={`mailto:${process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}`} className="text-primary hover:underline">
+                {process.env.NEXT_PUBLIC_SUPPORT_EMAIL || 'support@photorestorenow.com'}
               </a>
             </p>
           </section>

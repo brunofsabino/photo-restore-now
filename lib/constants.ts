@@ -31,6 +31,13 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
     priceMultiplier: 1.5,
     popular: true,
   },
+  {
+    id: 'deep-restoration',
+    name: 'Deep Restoration',
+    description: 'For photos with severe fold marks, heavy creases, or large missing areas. AI inpainting fills in the damage — not just softens it.',
+    icon: '🛠️',
+    priceMultiplier: 2.0,
+  },
 ];
 
 // ============================================
