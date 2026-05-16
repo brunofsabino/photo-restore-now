@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,16 +11,24 @@ import { SiteLayout } from '@/components/SiteLayout';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { data: session } = useSession();
   const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
+  const [orderEmail, setOrderEmail] = useState<string | null>(null);
 
   useEffect(() => {
     const payment_intent = searchParams.get('payment_intent');
-    if (payment_intent) {
-      setPaymentIntent(payment_intent);
+    if (payment_intent) setPaymentIntent(payment_intent);
+
+    // Get email from session or guest checkout
+    if (session?.user?.email) {
+      setOrderEmail(session.user.email);
+    } else {
+      try {
+        const guest = sessionStorage.getItem('guestCheckout');
+        if (guest) setOrderEmail(JSON.parse(guest).email || null);
+      } catch {}
     }
-  }, [searchParams]);
+  }, [searchParams, session]);
 
   return (
       <div className="min-h-screen bg-gradient-to-b from-green-50 to-white flex items-center justify-center p-4 py-20">
@@ -53,7 +61,7 @@ function PaymentSuccessContent() {
                 </div>
                 <div>
                   <p className="font-medium">Confirmation Email</p>
-                  <p className="text-gray-600">You'll receive a confirmation email at <span className="font-medium">{session?.user?.email}</span> with your order details.</p>
+                  <p className="text-gray-600">You'll receive a confirmation email{orderEmail ? <> at <span className="font-medium">{orderEmail}</span></> : ''} with your order details.</p>
                 </div>
               </div>
               

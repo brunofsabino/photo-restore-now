@@ -17,6 +17,10 @@ import { v4 as uuidv4 } from 'uuid';
  * Returns: { success, originalUrl, restoredUrl, provider, processingTime }
  */
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not available in production' }, { status: 403 });
+  }
+
   try {
     const formData = await req.formData();
     const image = formData.get('image') as File;

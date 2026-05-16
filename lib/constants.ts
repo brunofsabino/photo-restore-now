@@ -11,24 +11,24 @@ import { PricingPackage, ServiceOption } from '@/types';
 export const SERVICE_OPTIONS: ServiceOption[] = [
   {
     id: 'restoration',
-    name: 'Restoration Only',
-    description: 'Fix scratches, tears, and damage. Perfect for damaged photos that are already in color.',
+    name: 'Photo Restoration',
+    description: 'Fix scratches, tears, fading, and damage. Includes automatic face enhancement. Perfect for already-colored vintage photos.',
     icon: '🔧',
-    priceMultiplier: 1.0, // Base price
+    priceMultiplier: 1.0,
   },
   {
     id: 'colorization',
-    name: 'Colorization Only',
-    description: 'Add vibrant colors to black & white photos. Best for undamaged vintage photos.',
+    name: 'Colorization',
+    description: 'Bring black & white photos to life with realistic, vibrant colors. Includes automatic face enhancement.',
     icon: '🎨',
-    priceMultiplier: 0.5, // 50% of base price
+    priceMultiplier: 0.78,
   },
   {
     id: 'restoration-colorization',
-    name: 'Restoration + Colorization',
-    description: 'Complete transformation: fix damage AND add colors. Best for old damaged B&W photos.',
+    name: 'Full Restoration',
+    description: 'Complete transformation: repair all damage AND add beautiful colors. Best results for old damaged B&W photos. Includes face enhancement.',
     icon: '⭐',
-    priceMultiplier: 1.6, // 60% premium (combo discount)
+    priceMultiplier: 1.5,
     popular: true,
   },
 ];
@@ -40,16 +40,16 @@ export const SERVICE_OPTIONS: ServiceOption[] = [
 export const PRICING_PACKAGES: PricingPackage[] = [
   {
     id: '1-photo',
-    name: 'Try It Package',
+    name: 'Single Photo',
     photoCount: 1,
-    basePrice: 599, // $5.99 (was $9.99)
+    basePrice: 1799, // $17.99
     features: [
       'AI-powered restoration',
+      'Automatic face enhancement',
       'HD quality download',
       'Remove scratches & tears',
       'Print-ready quality',
       '24-hour delivery',
-      'Email support',
       'Money-back guarantee',
     ],
   },
@@ -57,13 +57,13 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '3-photos',
     name: 'Family Memories',
     photoCount: 3,
-    basePrice: 1497, // $14.97 (was $24.99)
+    basePrice: 4497, // $14.99/photo
     popular: true,
     badge: 'Most Popular',
     features: [
-      'Everything in Try It',
-      'Only $4.99 per photo',
-      'Save over 15%',
+      'Everything in Single Photo',
+      'Only $14.99 per photo',
+      'Save $9 vs single price',
       'Perfect for family album',
       'Priority 12-hour delivery',
       'Lifetime cloud storage',
@@ -74,13 +74,13 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '5-photos',
     name: 'Album Package',
     photoCount: 5,
-    basePrice: 2295, // $22.95 (was $39.99)
+    basePrice: 6995, // $13.99/photo
     badge: 'Best Value',
     features: [
       'Everything in Family',
-      'Only $4.59 per photo',
-      'Save 30% vs single photo',
-      'Colorize B&W photos included',
+      'Only $13.99 per photo',
+      'Save $20 vs single price',
+      'Mix restoration & colorization',
       '6-hour express delivery',
       'Share link with family',
       'Premium support',
@@ -90,12 +90,12 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '10-photos',
     name: 'Heritage Collection',
     photoCount: 10,
-    basePrice: 3997, // $39.97 (was $69.99)
+    basePrice: 12990, // $12.99/photo
     badge: 'Premium',
     features: [
       'Everything in Album',
-      'Only $3.99 per photo',
-      'Best savings - save 40%',
+      'Only $12.99 per photo',
+      'Save $50 vs single price',
       'Complete album restoration',
       'Before/After comparisons',
       'White glove service',
@@ -180,11 +180,12 @@ export const RATE_LIMIT = {
 // ============================================
 
 export const AI_PROVIDERS = {
+  REPLICATE: 'replicate',
   VANCEAI: 'vanceai',
   HOTPOT: 'hotpot',
 } as const;
 
-export const DEFAULT_AI_PROVIDER = (process.env.AI_PROVIDER || 'fake') as 'fake' | 'vanceai' | 'hotpot';
+export const DEFAULT_AI_PROVIDER = (process.env.AI_PROVIDER || 'fake') as 'fake' | 'replicate' | 'vanceai' | 'hotpot';
 
 // ============================================
 // JOB PROCESSING

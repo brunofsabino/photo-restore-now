@@ -7,6 +7,15 @@ import { ImageRestorationProvider, RestorationRequest, RestorationResult } from 
 
 export class FakeProvider implements ImageRestorationProvider {
   name = 'Fake AI Provider (Testing)';
+
+  getName(): string {
+    return this.name;
+  }
+
+  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
+    console.log('[FAKE-AI] restorePhoto called — returning original image unchanged');
+    return imageBuffer;
+  }
   
   private jobs = new Map<string, {
     imageBuffer: Buffer;

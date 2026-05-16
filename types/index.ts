@@ -72,9 +72,9 @@ export interface RestorationJob {
 // ============================================
 
 export interface AIProviderConfig {
-  name: 'vanceai' | 'hotpot';
+  name: 'replicate' | 'vanceai' | 'hotpot';
   apiKey: string;
-  apiUrl: string;
+  apiUrl?: string;
 }
 
 export interface RestorationRequest {

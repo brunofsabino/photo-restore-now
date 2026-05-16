@@ -6,10 +6,12 @@
 import { VanceAIProvider } from './vanceai.provider';
 import { HotpotProvider } from './hotpot.provider';
 import { FakeProvider } from './fake.provider';
+import { ReplicateProvider } from './replicate.provider';
 import { logger } from '@/lib/logger';
+import { ServiceType } from '@/types';
 
-export type AIProviderType = 'vanceai' | 'hotpot' | 'fake';
-export type ServiceType = 'restoration' | 'colorization' | 'restoration-colorization';
+export type AIProviderType = 'replicate' | 'vanceai' | 'hotpot' | 'fake';
+export type { ServiceType };
 
 export interface IAIProvider {
   restorePhoto(imageBuffer: Buffer): Promise<Buffer>;
@@ -17,18 +19,15 @@ export interface IAIProvider {
 }
 
 export class AIProviderFactory {
-  /**
-   * Get AI provider instance
-   * @param providerType - Type of provider to use (defaults to env var AI_PROVIDER)
-   * @param serviceType - Type of service (restoration, colorization, both)
-   */
   static getProvider(
-    providerType?: AIProviderType, 
+    providerType?: AIProviderType,
     serviceType: ServiceType = 'restoration'
   ): IAIProvider {
     const provider = providerType || (process.env.AI_PROVIDER as AIProviderType) || 'fake';
 
     switch (provider) {
+      case 'replicate':
+        return new ReplicateProvider(serviceType);
       case 'vanceai':
         return new VanceAIProvider(serviceType);
       case 'hotpot':
@@ -41,12 +40,10 @@ export class AIProviderFactory {
     }
   }
 
-  /**
-   * Get all available providers
-   */
   static getAllProviders(): IAIProvider[] {
     return [
       new FakeProvider(),
+      new ReplicateProvider('restoration'),
       new VanceAIProvider('restoration'),
       new HotpotProvider(),
     ];

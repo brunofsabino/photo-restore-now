@@ -103,12 +103,12 @@ function SelectServiceContent() {
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Choose Your Service</h1>
+          <h1 className="text-4xl font-bold mb-4">What do you need?</h1>
           <p className="text-xl text-gray-600 mb-2">
-            {packageInfo.name} - {packageInfo.photoCount} {packageInfo.photoCount === 1 ? 'Photo' : 'Photos'}
+            {packageInfo.name} — {packageInfo.photoCount} {packageInfo.photoCount === 1 ? 'Photo' : 'Photos'}
           </p>
           <p className="text-gray-500">
-            Select the type of enhancement you need for your photos
+            All services include automatic face enhancement at no extra charge
           </p>
         </div>
 
@@ -134,27 +134,34 @@ function SelectServiceContent() {
                     </span>
                   </div>
                 )}
-                
+
                 <CardHeader className="text-center">
                   <div className="text-5xl mb-4">{service.icon}</div>
                   <CardTitle className="text-xl mb-2">{service.name}</CardTitle>
-                  <CardDescription className="text-sm h-12">
+                  <CardDescription className="text-sm min-h-[60px]">
                     {service.description}
                   </CardDescription>
                 </CardHeader>
-                
+
                 <CardContent className="text-center">
-                  <div className="mb-4">
+                  <div className="mb-3">
                     <div className="text-3xl font-bold text-primary mb-1">
                       {formatPrice(price)}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      {formatPrice(pricePerPhoto)} per photo
-                    </div>
+                    {packageInfo.photoCount > 1 && (
+                      <div className="text-sm text-gray-500">
+                        {formatPrice(pricePerPhoto)} per photo
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 mb-3">
+                    <Check className="h-3 w-3" />
+                    <span>Face enhancement included</span>
                   </div>
 
                   {isSelected && (
-                    <div className="flex items-center justify-center gap-2 text-primary font-medium">
+                    <div className="flex items-center justify-center gap-2 text-primary font-medium mt-2">
                       <Check className="h-5 w-5" />
                       <span>Selected</span>
                     </div>
@@ -168,12 +175,12 @@ function SelectServiceContent() {
         {/* Feature Comparison */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>What's Included</CardTitle>
+            <CardTitle>What's included in every service</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid md:grid-cols-3 gap-6 text-sm">
               <div>
-                <h4 className="font-semibold mb-3 text-gray-700">🔧 Restoration</h4>
+                <h4 className="font-semibold mb-3 text-gray-700">🔧 Photo Restoration</h4>
                 <ul className="space-y-2 text-gray-600">
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
@@ -181,19 +188,19 @@ function SelectServiceContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Fix faded areas</span>
+                    <span>Fix faded & damaged areas</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Enhance sharpness</span>
+                    <span>4× upscaling for clarity</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Reduce noise</span>
+                    <span>Automatic face enhancement</span>
                   </li>
                 </ul>
               </div>
-              
+
               <div>
                 <h4 className="font-semibold mb-3 text-gray-700">🎨 Colorization</h4>
                 <ul className="space-y-2 text-gray-600">
@@ -203,37 +210,37 @@ function SelectServiceContent() {
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Natural skin tones</span>
+                    <span>Natural, realistic skin tones</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Accurate object colors</span>
+                    <span>Accurate object & clothing colors</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Vibrant results</span>
+                    <span>Automatic face enhancement</span>
                   </li>
                 </ul>
               </div>
-              
+
               <div>
-                <h4 className="font-semibold mb-3 text-gray-700">⭐ Combo Benefits</h4>
+                <h4 className="font-semibold mb-3 text-gray-700">⭐ Full Restoration</h4>
                 <ul className="space-y-2 text-gray-600">
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Complete transformation</span>
+                    <span>Everything in both services above</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Best value pricing</span>
+                    <span>Best results for damaged B&W photos</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Priority processing</span>
+                    <span>3-stage AI pipeline</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Highest quality</span>
+                    <span>Automatic face enhancement</span>
                   </li>
                 </ul>
               </div>

@@ -4,22 +4,13 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
-import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
+import { PRICING_PACKAGES, SERVICE_OPTIONS, APP_ROUTES } from '@/lib/constants';
 import { formatPrice, calculateServicePrice } from '@/lib/utils';
-import { Check, User, LogOut, Star, ArrowRight, HelpCircle } from 'lucide-react';
+import { Check, ArrowRight, Shield, HelpCircle, LogOut, User } from 'lucide-react';
 import { SignInModal } from '@/components/auth/SignInModal';
 import { CartButton } from '@/components/CartButton';
 import { FadeIn } from '@/components/animations/FadeIn';
-import { 
-  DSButton, 
-  DSCard, 
-  DSContainer,
-  DSDisplay,
-  DSHeading,
-  DSText,
-  DSSupportingText,
-  DSBadge
-} from '@/components/ds';
+import { Button } from '@/components/ui/button';
 
 export default function PricingPage() {
   const router = useRouter();
@@ -29,16 +20,12 @@ export default function PricingPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
   useEffect(() => {
-    // Check if user is authenticated (OAuth) or guest
     const guestCheckout = sessionStorage.getItem('guestCheckout');
-    const hasAuth = !!session || !!guestCheckout;
-    setIsAuthenticated(hasAuth);
+    setIsAuthenticated(!!session || !!guestCheckout);
   }, [session]);
 
   const handleChoosePackage = (packageId: string) => {
     setSelectedPackage(packageId);
-    
-    // If user is already authenticated (guest, Google, or Facebook), go to service selection
     if (isAuthenticated) {
       router.push(`/select-service?package=${packageId}`);
     } else {
@@ -46,8 +33,8 @@ export default function PricingPage() {
     }
   };
 
-  const callbackUrl = selectedPackage 
-    ? `/select-service?package=${selectedPackage}` 
+  const callbackUrl = selectedPackage
+    ? `/select-service?package=${selectedPackage}`
     : '/select-service';
 
   const faqs = [
@@ -61,218 +48,247 @@ export default function PricingPage() {
     },
     {
       q: 'Is my payment secure?',
-      a: 'Yes! We use Stripe for payment processing, which is trusted by millions of businesses worldwide. We never store your payment information.',
+      a: 'Yes. We use Stripe for payment processing — the same system used by Amazon and Apple. We never see or store your card number.',
     },
     {
       q: 'What if I\'m not satisfied with the results?',
-      a: 'We offer a 100% satisfaction guarantee. If you\'re not happy with the restoration, contact us within 7 days for a full refund.',
+      a: 'We offer a 100% money-back guarantee. If you\'re not happy with the restoration, contact us within 7 days for a full refund, no questions asked.',
     },
     {
       q: 'Are my photos kept private?',
-      a: 'Absolutely. Your photos are automatically deleted from our servers 7 days after delivery. We never share your photos with anyone.',
+      a: 'Absolutely. Your photos are processed securely and automatically deleted from our servers 7 days after delivery. We never share your photos with anyone.',
+    },
+    {
+      q: 'Can I choose different services for each photo?',
+      a: 'Yes. After purchasing a package, you can select a different service type for each individual photo — restoration, colorization, or both.',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-100 via-indigo-50 to-white">
+    <div className="min-h-screen bg-white">
+      {/* Guarantee strip */}
+      <div className="bg-emerald-700 text-white text-sm font-medium py-2.5 text-center">
+        100% Money-Back Guarantee &nbsp;·&nbsp; Results in 24 Hours &nbsp;·&nbsp; Secure Payment via Stripe
+      </div>
+
       {/* Navigation */}
-      <nav className="border-b border-gray-100 bg-white/80 backdrop-blur-md sticky top-0 z-50 shadow-sm">
-        <DSContainer size="xl">
-          <div className="py-4 flex items-center justify-between">
-            <Link 
-              href={APP_ROUTES.HOME} 
-              className="text-2xl font-extrabold bg-gradient-to-r from-primary-600 to-blue-600 bg-clip-text text-transparent"
-            >
-              PhotoRestoreNow
-            </Link>
-            <div className="flex items-center gap-3">
-              <CartButton />
-              {session?.user && (
-                <>
-                  <DSBadge variant="primary" icon={<User className="h-4 w-4" />}>
-                    {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
-                  </DSBadge>
-                  <DSButton
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => signOut()}
-                    leftIcon={<LogOut className="h-4 w-4" />}
-                  >
-                    <span className="hidden sm:inline">Logout</span>
-                  </DSButton>
-                </>
-              )}
+      <nav className="border-b border-gray-100 bg-white sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 py-4 flex items-center justify-between max-w-7xl">
+          <Link href={APP_ROUTES.HOME} className="text-2xl font-extrabold text-gray-900">
+            PhotoRestoreNow
+          </Link>
+          <div className="flex items-center gap-3">
+            <CartButton />
+            {session?.user ? (
+              <>
+                <span className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-gray-700 bg-gray-100 px-3 py-1.5 rounded-full">
+                  <User className="h-3.5 w-3.5" />
+                  {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
+                </span>
+                <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5">
+                  <LogOut className="h-4 w-4" />
+                  <span className="hidden sm:inline">Logout</span>
+                </Button>
+              </>
+            ) : (
               <Link href={APP_ROUTES.HOME}>
-                <DSButton variant="ghost" size="sm">Back to Home</DSButton>
+                <Button variant="ghost" size="sm">← Back to Home</Button>
               </Link>
-            </div>
+            )}
           </div>
-        </DSContainer>
+        </div>
       </nav>
 
-      {/* Sign In Modal */}
-      <SignInModal 
-        isOpen={showSignInModal} 
+      <SignInModal
+        isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         callbackUrl={callbackUrl}
         packageId={selectedPackage || undefined}
       />
 
-      {/* Pricing Section */}
-      <section className="py-20">
-        <DSContainer size="lg">
+      {/* Header */}
+      <section className="bg-gradient-to-b from-blue-50 to-white pt-16 pb-12 text-center">
+        <FadeIn direction="up">
+          <p className="text-sm font-semibold text-blue-600 uppercase tracking-widest mb-3">Simple Pricing</p>
+          <h1 className="text-4xl md:text-5xl font-extrabold text-gray-900 mb-4 tracking-tight">
+            Choose Your Package
+          </h1>
+          <p className="text-lg text-gray-600 max-w-xl mx-auto">
+            Every package includes the same professional AI quality.<br />
+            <span className="font-semibold text-gray-800">The more photos, the more you save.</span>
+          </p>
+        </FadeIn>
+      </section>
+
+      {/* Pricing Cards */}
+      <section className="pb-20 px-4">
+        <div className="max-w-6xl mx-auto">
+
+          {/* Service type key */}
           <FadeIn direction="up">
-            <div className="text-center mb-16">
-              <DSDisplay size="md" className="mb-6">
-                Simple, Transparent Pricing
-              </DSDisplay>
-              <DSText size="xl" className="max-w-2xl mx-auto text-gray-600">
-                Choose the package that best fits your needs. All packages include the same professional AI restoration quality.
-              </DSText>
+            <div className="flex flex-wrap justify-center gap-4 mb-10">
+              {SERVICE_OPTIONS.map(svc => (
+                <div key={svc.id} className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-full px-4 py-2">
+                  <span>{svc.icon}</span>
+                  <span className="font-medium">{svc.name}</span>
+                  <span className="text-gray-400">·</span>
+                  <span className="text-gray-500">
+                    {svc.priceMultiplier === 1 ? 'base price' : `${Math.round(svc.priceMultiplier * 100)}% of base`}
+                  </span>
+                </div>
+              ))}
             </div>
           </FadeIn>
 
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {PRICING_PACKAGES.map((pkg, index) => {
               const isPopular = pkg.popular;
-              
               return (
-                <FadeIn key={pkg.id} direction="up" delay={index * 0.1}>
-                  <DSCard
-                    variant={isPopular ? 'featured' : 'default'}
-                    padding="none"
-                    className={`relative ${isPopular ? 'scale-105 ring-2 ring-primary-200' : ''}`}
-                  >
+                <FadeIn key={pkg.id} direction="up" delay={index * 0.08}>
+                  <div className={`relative flex flex-col rounded-2xl border-2 overflow-hidden h-full transition-shadow hover:shadow-xl ${
+                    isPopular
+                      ? 'border-blue-600 shadow-lg shadow-blue-100'
+                      : 'border-gray-200'
+                  }`}>
                     {isPopular && (
-                      <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                        <DSBadge variant="primary" icon={<Star className="h-3.5 w-3.5 fill-current" />}>
-                          Most Popular
-                        </DSBadge>
+                      <div className="bg-blue-600 text-white text-xs font-bold uppercase tracking-widest text-center py-2">
+                        Most Popular
                       </div>
                     )}
 
-                    <div className="p-8 text-center">
-                      <DSHeading size="lg" className="mb-3">
-                        {pkg.name}
-                      </DSHeading>
-                      
-                      <div className="mb-4">
-                        <div className="text-5xl font-extrabold text-gray-900 mb-1">
-                          {formatPrice(pkg.basePrice)}
-                        </div>
-                        <DSSupportingText size="sm">
-                          starting price
-                        </DSSupportingText>
+                    <div className={`p-6 flex flex-col flex-1 ${isPopular ? 'bg-blue-50' : 'bg-white'}`}>
+                      {/* Package name + photo count */}
+                      <div className="mb-5">
+                        <h2 className="text-lg font-bold text-gray-900">{pkg.name}</h2>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          {pkg.photoCount} {pkg.photoCount === 1 ? 'photo' : 'photos'}
+                        </p>
                       </div>
-                      
-                      <DSText size="sm" className="text-gray-600 mb-4">
-                        {pkg.photoCount} {pkg.photoCount === 1 ? 'Photo' : 'Photos'}
-                      </DSText>
-                      
-                      {/* Service pricing breakdown */}
-                      <div className="pt-4 border-t border-gray-100 space-y-1.5">
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-medium">Restoration</span>
-                          <span className="text-gray-700 font-semibold">{formatPrice(pkg.basePrice)}</span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-medium">Colorization</span>
-                          <span className="text-gray-700 font-semibold">
-                            {formatPrice(calculateServicePrice(pkg.basePrice, 'colorization'))}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-xs">
-                          <span className="text-gray-500 font-medium">Both Services</span>
-                          <span className="text-gray-700 font-semibold">
-                            {formatPrice(calculateServicePrice(pkg.basePrice, 'restoration-colorization'))}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
 
-                    <div className="px-8 pb-8">
-                      <ul className="space-y-3 mb-6">
-                        {pkg.features.map((feature, featureIndex) => (
-                          <li key={featureIndex} className="flex items-start gap-3">
-                            <div className="flex-shrink-0 mt-0.5">
-                              <div className="w-5 h-5 rounded-full bg-success-100 flex items-center justify-center">
-                                <Check className="h-3.5 w-3.5 text-success-600 stroke-[3]" />
-                              </div>
-                            </div>
-                            <span className="text-sm text-gray-700 leading-tight font-medium">
-                              {feature}
+                      {/* Price */}
+                      <div className="mb-5">
+                        <div className="flex items-end gap-1">
+                          <span className="text-4xl font-extrabold text-gray-900">
+                            {formatPrice(pkg.basePrice)}
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-1">
+                          for restoration · {formatPrice(Math.round(pkg.basePrice / pkg.photoCount))}/photo
+                        </p>
+                      </div>
+
+                      {/* Service breakdown */}
+                      <div className="bg-white/70 rounded-xl p-3 mb-5 space-y-1.5 border border-gray-100">
+                        <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-2">Service prices</p>
+                        {SERVICE_OPTIONS.map(svc => (
+                          <div key={svc.id} className="flex justify-between items-center text-sm">
+                            <span className="text-gray-600 flex items-center gap-1.5">
+                              <span>{svc.icon}</span> {svc.name.split(' ')[0]}
                             </span>
+                            <span className="font-semibold text-gray-900">
+                              {formatPrice(calculateServicePrice(pkg.basePrice, svc.id))}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Features */}
+                      <ul className="space-y-2 mb-6 flex-1">
+                        {pkg.features.map((feature, fi) => (
+                          <li key={fi} className="flex items-start gap-2.5 text-sm text-gray-700">
+                            <Check className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0 stroke-[2.5]" />
+                            <span>{feature}</span>
                           </li>
                         ))}
                       </ul>
 
-                      <DSButton
-                        variant={isPopular ? 'primary' : 'secondary'}
+                      {/* CTA */}
+                      <Button
                         size="lg"
                         onClick={() => handleChoosePackage(pkg.id)}
-                        className="w-full"
-                        rightIcon={<ArrowRight className="h-5 w-5" />}
+                        className={`w-full gap-2 ${
+                          isPopular
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                            : 'bg-gray-900 hover:bg-gray-800 text-white'
+                        }`}
                       >
-                        Choose {pkg.name}
-                      </DSButton>
+                        Get Started
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
                     </div>
-                  </DSCard>
+                  </div>
                 </FadeIn>
               );
             })}
           </div>
 
-          {/* FAQ Section */}
-          <div className="mt-20">
-            <FadeIn direction="up">
-              <div className="text-center mb-12">
-                <DSHeading size="xl" className="mb-4">
-                  Frequently Asked Questions
-                </DSHeading>
-                <DSSupportingText className="text-base">
-                  Everything you need to know about photo restoration
-                </DSSupportingText>
-              </div>
-            </FadeIn>
-            
-            <DSContainer size="md">
-              <div className="space-y-4">
-                {faqs.map((faq, index) => (
-                  <FadeIn key={index} direction="up" delay={index * 0.05}>
-                    <DSCard variant="flat" padding="md" className="hover:bg-white transition-colors">
-                      <div className="flex gap-4">
-                        <div className="flex-shrink-0">
-                          <div className="w-8 h-8 rounded-full bg-primary-100 flex items-center justify-center">
-                            <HelpCircle className="h-4 w-4 text-primary-600" />
-                          </div>
-                        </div>
-                        <div className="flex-1">
-                          <DSHeading size="xs" className="mb-2">
-                            {faq.q}
-                          </DSHeading>
-                          <DSText size="sm" className="text-gray-600">
-                            {faq.a}
-                          </DSText>
-                        </div>
-                      </div>
-                    </DSCard>
-                  </FadeIn>
-                ))}
-              </div>
-            </DSContainer>
+          {/* Trust row */}
+          <FadeIn direction="up" delay={0.3}>
+            <div className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-gray-500">
+              {[
+                { icon: '🔒', text: 'Secured by Stripe' },
+                { icon: '🛡️', text: '100% money-back guarantee' },
+                { icon: '⚡', text: 'Results within 24 hours' },
+                { icon: '🗑️', text: 'Photos deleted after 7 days' },
+              ].map((item, i) => (
+                <div key={i} className="flex items-center gap-2">
+                  <span>{item.icon}</span>
+                  <span>{item.text}</span>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* Guarantee block */}
+      <section className="bg-stone-50 border-y border-stone-200 py-14 px-4 text-center">
+        <FadeIn direction="up">
+          <Shield className="h-10 w-10 text-emerald-600 mx-auto mb-4" />
+          <h2 className="text-2xl md:text-3xl font-extrabold text-gray-900 mb-3">
+            Not happy? Get a full refund.
+          </h2>
+          <p className="text-gray-600 max-w-lg mx-auto text-base leading-relaxed">
+            If for any reason you are not satisfied with your restored photo, email us within 7 days and we will refund you completely — no questions, no hassle.
+          </p>
+        </FadeIn>
+      </section>
+
+      {/* FAQ */}
+      <section className="py-20 px-4">
+        <div className="max-w-2xl mx-auto">
+          <FadeIn direction="up">
+            <h2 className="text-3xl font-extrabold text-gray-900 text-center mb-12">
+              Frequently Asked Questions
+            </h2>
+          </FadeIn>
+          <div className="space-y-4">
+            {faqs.map((faq, index) => (
+              <FadeIn key={index} direction="up" delay={index * 0.05}>
+                <div className="border border-gray-200 rounded-xl p-6 hover:border-blue-200 transition-colors">
+                  <div className="flex gap-4">
+                    <HelpCircle className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <h3 className="font-semibold text-gray-900 mb-1.5">{faq.q}</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">{faq.a}</p>
+                    </div>
+                  </div>
+                </div>
+              </FadeIn>
+            ))}
           </div>
-        </DSContainer>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 mt-20">
-        <DSContainer size="xl">
-          <div className="text-center">
-            <DSSupportingText className="text-gray-400">
-              &copy; 2024 PhotoRestoreNow. All rights reserved.
-            </DSSupportingText>
-          </div>
-        </DSContainer>
+      <footer className="bg-gray-900 text-white py-10 px-4 text-center">
+        <p className="text-gray-400 text-sm">
+          &copy; {new Date().getFullYear()} PhotoRestoreNow. All rights reserved.
+          &nbsp;·&nbsp;
+          <Link href={APP_ROUTES.PRIVACY} className="hover:text-white transition-colors">Privacy</Link>
+          &nbsp;·&nbsp;
+          <Link href={APP_ROUTES.TERMS} className="hover:text-white transition-colors">Terms</Link>
+        </p>
       </footer>
     </div>
   );

@@ -1,7 +1,6 @@
 import NextAuth from "next-auth"
 import type { NextAuthOptions } from "next-auth"
 import GoogleProvider from "next-auth/providers/google"
-import FacebookProvider from "next-auth/providers/facebook"
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { PrismaClient } from "@prisma/client"
 import { sendWelcomeEmail } from "@/services/email.service"
@@ -16,33 +15,13 @@ export const authOptions: NextAuthOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
-    FacebookProvider({
-      clientId: process.env.FACEBOOK_CLIENT_ID!,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-      authorization: {
-        params: {
-          scope: "public_profile",
-        }
-      },
-      userinfo: {
-        url: "https://graph.facebook.com/me?fields=id,name,picture",
-      },
-      profile(profile) {
-        return {
-          id: profile.id,
-          name: profile.name,
-          email: `${profile.id}@facebook.com`,
-          image: profile.picture?.data?.url ?? null,
-        }
-      }
-    }),
   ],
   pages: {
     signIn: '/auth/signin',
     error: '/auth/signin',
   },
   callbacks: {
-    async signIn({ user, account, profile, isNewUser }) {
+    async signIn({ user }) {
       // Send welcome email to new users
       if (user.email) {
         try {

@@ -1,8 +1,7 @@
-import { NextResponse } from 'next/server';
 
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
-const MAX_FILES = 20;
+const MAX_FILES = 10; // matches the largest available package
 
 interface ValidationResult {
   valid: boolean;
