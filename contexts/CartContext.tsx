@@ -197,7 +197,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const newItems = prev.items.filter(item => item.id !== itemId);
       const totalAmount = newItems.reduce((sum, item) => {
         const pkg = PRICING_PACKAGES.find(p => p.id === item.packageId);
-        return sum + (pkg?.price || 0);
+        return sum + calculateServicePrice(pkg?.basePrice || 0, item.serviceType);
       }, 0);
       const totalImages = newItems.reduce(
         (sum, item) => sum + item.images.length,
