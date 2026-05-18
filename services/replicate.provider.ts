@@ -107,7 +107,7 @@ export class ReplicateProvider implements IAIProvider {
     logger.info('[Replicate] Running GFPGAN (face restoration)');
     return this.runPrediction(MODELS.GFPGAN, {
       img: imageUrl,
-      version: 2,
+      version: 'v1.4',
       scale: 2,
     });
   }
@@ -116,8 +116,8 @@ export class ReplicateProvider implements IAIProvider {
     logger.info('[Replicate] Running Real-ESRGAN (upscaling)');
     return this.runPrediction(MODELS.REAL_ESRGAN, {
       image: imageUrl,
-      scale: 4,
-      face_enhance: false,
+      scale: 2,
+      face_enhance: true,
     });
   }
 
@@ -125,6 +125,7 @@ export class ReplicateProvider implements IAIProvider {
     logger.info('[Replicate] Running DeOldify (colorization)');
     return this.runPrediction(MODELS.DEOLDIFY, {
       input_image: imageUrl,
+      model_name: 'Stable',
       render_factor: 35,
     });
   }
