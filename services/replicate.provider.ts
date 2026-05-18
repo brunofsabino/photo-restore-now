@@ -21,14 +21,11 @@ import { ServiceType } from '@/types';
 
 const REPLICATE_API = 'https://api.replicate.com/v1';
 
-// Model identifiers — called via /models/{owner}/{name}/predictions
-// which always uses the latest deployed version (no hash needed)
+// Version-based model IDs — required by the /v1/predictions endpoint
 const MODELS = {
-  GFPGAN:           { owner: 'tencentarc',     name: 'gfpgan' },
-  REAL_ESRGAN:      { owner: 'nightmareai',    name: 'real-esrgan' },
-  DEOLDIFY:         { owner: 'arielreplicate', name: 'deoldify_image' },
-  // Microsoft Research "Bringing Old Photos Back to Life" — blind inpainting:
-  // auto-detects scratches, fold marks, creases without requiring a user mask
+  GFPGAN:      '0fbacf7afc6c144e5be9767cff80f25aff23e52b0708f17e20f9879b2f21516c',
+  REAL_ESRGAN: 'b3ef194191d13140337468c916c2c5b96dd0cb06dffc032a022a31807f6a5ea8',
+  DEOLDIFY:    '0da600fab0c45a66211339f1c16b71345d22f26ef5fea3dca1bb90bb5711e950',
 };
 
 const POLL_INTERVAL_MS = 4000;
@@ -136,15 +133,14 @@ export class ReplicateProvider implements IAIProvider {
   // ─── Prediction lifecycle ────────────────────────────────────────────────────
 
   private async runPrediction(
-    model: { owner: string; name: string },
+    version: string,
     input: Record<string, unknown>
   ): Promise<string> {
-    // Use /models/{owner}/{name}/predictions — always calls the latest deployed version
-    const url = `${REPLICATE_API}/models/${model.owner}/${model.name}/predictions`;
+    const url = `${REPLICATE_API}/predictions`;
 
     const response = await axios.post(
       url,
-      { input },
+      { version, input },
       {
         headers: {
           Authorization: `Bearer ${this.apiToken}`,
@@ -156,7 +152,7 @@ export class ReplicateProvider implements IAIProvider {
     );
 
     const predictionId: string = response.data.id;
-    logger.info('[Replicate] Prediction started', { predictionId, model: `${model.owner}/${model.name}` });
+    logger.info('[Replicate] Prediction started', { predictionId, version });
 
     // If the response already has output (fast models with Prefer: wait), return immediately
     if (response.data.status === 'succeeded' && response.data.output) {
