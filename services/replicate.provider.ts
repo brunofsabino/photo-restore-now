@@ -139,6 +139,7 @@ export class ReplicateProvider implements IAIProvider {
   ): Promise<string> {
     const url = `${REPLICATE_API}/predictions`;
 
+    // POST just creates the prediction and returns an ID — polling handles the wait
     const response = await axios.post(
       url,
       { version, input },
@@ -146,20 +147,13 @@ export class ReplicateProvider implements IAIProvider {
         headers: {
           Authorization: `Bearer ${this.apiToken}`,
           'Content-Type': 'application/json',
-          'Prefer': 'wait',
         },
-        timeout: 30_000,
+        timeout: 15_000,
       }
     );
 
     const predictionId: string = response.data.id;
-    logger.info('[Replicate] Prediction started', { predictionId, version });
-
-    // If the response already has output (fast models with Prefer: wait), return immediately
-    if (response.data.status === 'succeeded' && response.data.output) {
-      const output = response.data.output;
-      return (Array.isArray(output) ? output[0] : output) as string;
-    }
+    logger.info('[Replicate] Prediction created', { predictionId, version });
 
     return this.waitForPrediction(predictionId);
   }
