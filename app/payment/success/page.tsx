@@ -8,10 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { CheckCircle, Mail, Download, Home } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { SiteLayout } from '@/components/SiteLayout';
+import { useCart } from '@/contexts/CartContext';
 
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { clearCart } = useCart();
   const [orderRef, setOrderRef] = useState<string | null>(null);
   const [orderEmail, setOrderEmail] = useState<string | null>(null);
 
@@ -20,6 +22,7 @@ function PaymentSuccessContent() {
     const payment_intent = searchParams.get('payment_intent');
     if (session_id) setOrderRef(session_id);
     else if (payment_intent) setOrderRef(payment_intent);
+    clearCart();
 
     // Get email from session or guest checkout
     if (session?.user?.email) {
