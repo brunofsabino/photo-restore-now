@@ -196,6 +196,9 @@ export default function CheckoutPage() {
   // ══════════════════════════════════════════════════════════════════════════
   if (step === 'preview') {
     const photoUrls = allObjectUrls();
+    const previewServiceType = cartState.items[0]?.serviceType ?? 'restoration';
+    const hasColorization = previewServiceType === 'colorization' || previewServiceType === 'restoration-colorization';
+    const isDeepRestoration = previewServiceType === 'deep-restoration';
     return (
       <div className="min-h-screen bg-gray-50">
         <Nav />
@@ -220,6 +223,16 @@ export default function CheckoutPage() {
               Below is a preview of the AI enhancement quality.
               Your restored photos will be delivered in full resolution — no watermark.
             </p>
+            {hasColorization && (
+              <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-2 rounded-full mt-3">
+                🎨 <span><strong>Note:</strong> The preview shows sharpness &amp; detail — full color restoration is applied after payment.</span>
+              </div>
+            )}
+            {isDeepRestoration && (
+              <div className="inline-flex items-center gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-2 rounded-full mt-3">
+                🛠️ <span><strong>Note:</strong> The preview shows clarity improvements — fold marks &amp; crease inpainting is applied after payment.</span>
+              </div>
+            )}
           </div>
 
           {/* Photo previews */}
