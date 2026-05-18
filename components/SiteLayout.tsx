@@ -10,7 +10,7 @@ import { useCart } from '@/contexts/CartContext';
 import { User, LogOut } from 'lucide-react';
 
 interface SiteLayoutProps {
-  children: React.NodeNode;
+  children: React.ReactNode;
 }
 
 export function SiteLayout({ children }: SiteLayoutProps) {
@@ -30,8 +30,8 @@ export function SiteLayout({ children }: SiteLayoutProps) {
     <div className="min-h-screen bg-gradient-to-b from-blue-50 via-white to-blue-50">
       {/* Navigation */}
       <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <Link href={APP_ROUTES.HOME} className="text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent">
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between gap-2">
+          <Link href={APP_ROUTES.HOME} className="text-lg sm:text-2xl font-bold bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent shrink-0">
             PhotoRestoreNow
           </Link>
           <div className="hidden md:flex gap-6 items-center">
@@ -50,29 +50,31 @@ export function SiteLayout({ children }: SiteLayoutProps) {
               How It Works
             </Link>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <CartButton />
             {status === 'authenticated' ? (
-              <div className="flex items-center gap-3">
-                <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
-                  <User className="h-4 w-4 text-primary" />
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg border border-blue-100">
+                  <User className="h-3.5 w-3.5 text-primary" />
                   <span className="text-sm font-medium text-gray-800">
-                    Hello, {session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0]}
+                    {session?.user?.name?.split(' ')[0] || session?.user?.email?.split('@')[0]}
                   </span>
                 </div>
                 <Button
                   variant="outline"
                   size="sm"
                   onClick={handleSignOut}
-                  className="gap-2"
+                  className="gap-1.5 px-2 sm:px-3"
                 >
                   <LogOut className="h-4 w-4" />
-                  Logout
+                  <span className="hidden sm:inline">Logout</span>
                 </Button>
               </div>
             ) : (
               <Link href={APP_ROUTES.PRICING}>
-                <Button size="lg" className="shadow-lg hover:shadow-xl transition-shadow">Get Started</Button>
+                <Button size="sm" className="shadow-md hover:shadow-lg transition-shadow text-sm sm:text-base sm:px-4">
+                  Get Started
+                </Button>
               </Link>
             )}
           </div>
@@ -124,7 +126,7 @@ export function SiteLayout({ children }: SiteLayoutProps) {
             </div>
           </div>
           <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
-            <p>&copy; 2024 PhotoRestoreNow. All rights reserved.</p>
+            <p>&copy; {new Date().getFullYear()} PhotoRestoreNow. All rights reserved.</p>
           </div>
         </div>
       </footer>
