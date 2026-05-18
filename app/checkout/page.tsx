@@ -324,21 +324,57 @@ export default function CheckoutPage() {
   // STEP: paying
   // ══════════════════════════════════════════════════════════════════════════
   if (step === 'paying') {
+    const firstItem = cartState.items[0];
+    const svc = firstItem ? getServiceOption(firstItem.serviceType) : null;
+
     return (
       <div className="min-h-screen bg-gray-50">
         <Nav />
         <div className="container mx-auto px-4 py-10 max-w-lg">
-          <div className="text-center mb-8">
+
+          {/* Header */}
+          <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 bg-blue-50 border border-blue-200 text-blue-700 text-sm font-semibold px-4 py-2 rounded-full mb-4">
               <Lock className="h-4 w-4" /> Secure Checkout
             </div>
-            <h1 className="text-2xl font-extrabold text-gray-900 mb-1">Complete Your Payment</h1>
-            <p className="text-gray-500 text-sm">
-              {cartState.totalImages} photo{cartState.totalImages > 1 ? 's' : ''} · ${(total / 100).toFixed(2)} total
-            </p>
+            <h1 className="text-2xl font-extrabold text-gray-900">Complete Your Payment</h1>
           </div>
 
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-8">
+          {/* Order summary */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm mb-4 overflow-hidden">
+            <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+              <span className="text-sm font-semibold text-gray-700">Order Summary</span>
+              <button
+                onClick={() => setStep('preview')}
+                className="text-xs text-blue-600 hover:underline"
+              >
+                ← Edit
+              </button>
+            </div>
+            <div className="px-5 py-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-sm text-gray-700">
+                  <span className="text-base">{svc?.icon ?? '📸'}</span>
+                  <span>
+                    {cartState.totalImages} photo{cartState.totalImages > 1 ? 's' : ''}
+                    {svc ? ` · ${svc.name}` : ''}
+                  </span>
+                </div>
+                <span className="font-bold text-gray-900">${(total / 100).toFixed(2)}</span>
+              </div>
+              <div className="flex items-center gap-2 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+                <span>📧</span>
+                <span>
+                  Restored photos delivered to{' '}
+                  <strong className="break-all">{email}</strong>{' '}
+                  within 24 hours
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Payment form */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
             {clientSecret ? (
               <Elements
                 stripe={stripePromise}
@@ -359,7 +395,7 @@ export default function CheckoutPage() {
             )}
           </div>
 
-          <div className="mt-6 flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-400">
+          <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-1.5 text-xs text-gray-400">
             <span>🔒 256-bit SSL encryption</span>
             <span>🛡️ 100% money-back guarantee</span>
             <span>💳 Visa, Mastercard, Amex, Apple Pay</span>
