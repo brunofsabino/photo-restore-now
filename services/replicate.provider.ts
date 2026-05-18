@@ -29,7 +29,6 @@ const MODELS = {
   DEOLDIFY:         { owner: 'arielreplicate', name: 'deoldify_image' },
   // Microsoft Research "Bringing Old Photos Back to Life" — blind inpainting:
   // auto-detects scratches, fold marks, creases without requiring a user mask
-  BRINGING_OLD_PHOTOS: { owner: 'codeslake', name: 'bringing-old-photos-back-to-life' },
 };
 
 const POLL_INTERVAL_MS = 4000;
@@ -81,8 +80,8 @@ export class ReplicateProvider implements IAIProvider {
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else if (this.serviceType === 'deep-restoration') {
-        // Inpainting first: auto-detects and fills fold marks, creases, tears
-        currentUrl = await this.runBringingOldPhotos(currentUrl);
+        // Double GFPGAN pass for maximum damage repair, then high-res upscale
+        currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
       }
@@ -133,13 +132,6 @@ export class ReplicateProvider implements IAIProvider {
     });
   }
 
-  private async runBringingOldPhotos(imageUrl: string): Promise<string> {
-    logger.info('[Replicate] Running BringingOldPhotos (fold/crease inpainting)');
-    return this.runPrediction(MODELS.BRINGING_OLD_PHOTOS, {
-      image: imageUrl,
-      HR: true, // high-resolution mode
-    });
-  }
 
   // ─── Prediction lifecycle ────────────────────────────────────────────────────
 

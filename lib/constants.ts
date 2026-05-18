@@ -49,7 +49,7 @@ export const PRICING_PACKAGES: PricingPackage[] = [
     id: '1-photo',
     name: 'Single Photo',
     photoCount: 1,
-    basePrice: 100, // $1.00 (TEMP TEST — change back to 1799)
+    basePrice: 10, // $0.10 (TEMP TEST — change back to 1799)
     features: [
       'AI-powered restoration',
       'Automatic face enhancement',
