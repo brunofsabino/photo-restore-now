@@ -69,7 +69,7 @@ export default function HomePage() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  onClick={() => signOut()}
+                  onClick={() => signOut({ callbackUrl: '/' })}
                   className="gap-1.5 text-gray-600"
                 >
                   <LogOut className="h-4 w-4" />

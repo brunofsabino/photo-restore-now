@@ -85,7 +85,7 @@ export default function PricingPage() {
                   <User className="h-3.5 w-3.5" />
                   {session.user.name?.split(' ')[0] || session.user.email?.split('@')[0]}
                 </span>
-                <Button variant="ghost" size="sm" onClick={() => signOut()} className="gap-1.5">
+                <Button variant="ghost" size="sm" onClick={() => signOut({ callbackUrl: '/' })} className="gap-1.5">
                   <LogOut className="h-4 w-4" />
                   <span className="hidden sm:inline">Logout</span>
                 </Button>
