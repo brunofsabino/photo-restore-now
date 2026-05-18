@@ -86,8 +86,9 @@ export default function HomePage() {
       </nav>
 
       {/* Guarantee strip */}
-      <div className="bg-emerald-700 text-white text-sm font-medium py-2.5 text-center">
-        100% Money-Back Guarantee &nbsp;·&nbsp; Results in 24 Hours &nbsp;·&nbsp; Secure Payment via Stripe
+      <div className="bg-emerald-700 text-white text-xs sm:text-sm font-medium py-2 sm:py-2.5 text-center px-2">
+        <span className="sm:hidden">100% Guaranteed · 24hr Results · Stripe</span>
+        <span className="hidden sm:inline">100% Money-Back Guarantee &nbsp;·&nbsp; Results in 24 Hours &nbsp;·&nbsp; Secure Payment via Stripe</span>
       </div>
 
       {/* Hero Section */}
@@ -102,7 +103,7 @@ export default function HomePage() {
                 </div>
               </FadeIn>
               <FadeIn direction="up" delay={0.2}>
-                <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6 leading-snug tracking-tight">
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-gray-900 mb-6 leading-snug tracking-tight">
                   See Grandma Young Again.
                   <span className="block bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent pb-2">
                     Bring Old Photos Back to Life.
@@ -110,26 +111,27 @@ export default function HomePage() {
                 </h1>
               </FadeIn>
               <FadeIn direction="up" delay={0.3}>
-                <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
+                <p className="text-base sm:text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
                   Upload a faded, scratched, or black-and-white photo. Our AI restores it in minutes — ready to print and frame.
                 </p>
               </FadeIn>
               <FadeIn direction="up" delay={0.4}>
                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                   <Link href={APP_ROUTES.PRICING}>
-                    <Button size="lg" className="text-xl px-10 py-7 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all">
+                    <Button size="lg" className="text-base sm:text-xl px-6 sm:px-10 py-5 sm:py-7 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all w-full sm:w-auto">
                       <Sparkles className="mr-2 h-5 w-5" />
-                      Restore My Photos — Starting at $17.99
+                      <span className="sm:hidden">Restore My Photos</span>
+                      <span className="hidden sm:inline">Restore My Photos — Starting at $17.99</span>
                     </Button>
                   </Link>
                   <Link href="#examples">
-                    <Button size="lg" variant="outline" className="text-lg px-8 py-7 border-2 bg-white hover:bg-gray-50 transition-colors">
+                    <Button size="lg" variant="outline" className="text-base sm:text-lg px-6 sm:px-8 py-5 sm:py-7 border-2 bg-white hover:bg-gray-50 transition-colors w-full sm:w-auto">
                       See Real Examples
                     </Button>
                   </Link>
                 </div>
                 <p className="mt-4 text-sm text-gray-500">No subscription. Pay once, download forever.</p>
-                <div className="mt-5 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-5 py-2.5 rounded-full text-sm font-medium">
+                <div className="mt-5 inline-flex items-center gap-2 bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-full text-xs sm:text-sm font-medium max-w-xs sm:max-w-none mx-auto text-left sm:text-center">
                   <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
                   <span><strong>See a free preview</strong> of your restored photo before paying — no risk, no commitment.</span>
                 </div>
@@ -432,7 +434,7 @@ export default function HomePage() {
             </div>
             {/* Trust signals side */}
             <FadeIn direction="up" delay={0.2}>
-              <div className="flex flex-col gap-3 min-w-[220px]">
+              <div className="flex flex-col gap-3 w-full md:min-w-[220px] md:w-auto">
                 {[
                   { icon: '⭐', text: '100% satisfaction or full refund' },
                   { icon: '🔒', text: 'Secure payment via Stripe' },

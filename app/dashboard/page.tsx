@@ -331,7 +331,7 @@ export default function DashboardPage() {
                         value={verificationCode}
                         onChange={e => setVerificationCode(e.target.value.replace(/\D/g, ''))}
                         onKeyDown={e => e.key === 'Enter' && verifyAndFetchOrders()}
-                        className="h-14 text-center text-3xl tracking-[0.5em] font-bold"
+                        className="h-14 text-center text-2xl sm:text-3xl tracking-[0.3em] sm:tracking-[0.5em] font-bold"
                       />
                     </div>
                     <Button

@@ -67,8 +67,9 @@ export default function PricingPage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Guarantee strip */}
-      <div className="bg-emerald-700 text-white text-sm font-medium py-2.5 text-center">
-        100% Money-Back Guarantee &nbsp;·&nbsp; Results in 24 Hours &nbsp;·&nbsp; Secure Payment via Stripe
+      <div className="bg-emerald-700 text-white text-xs sm:text-sm font-medium py-2 sm:py-2.5 text-center px-2">
+        <span className="sm:hidden">100% Guaranteed · 24hr Results · Stripe</span>
+        <span className="hidden sm:inline">100% Money-Back Guarantee &nbsp;·&nbsp; Results in 24 Hours &nbsp;·&nbsp; Secure Payment via Stripe</span>
       </div>
 
       {/* Navigation */}
@@ -168,7 +169,7 @@ export default function PricingPage() {
                       {/* Price */}
                       <div className="mb-5">
                         <div className="flex items-end gap-1">
-                          <span className="text-4xl font-extrabold text-gray-900">
+                          <span className="text-3xl sm:text-4xl font-extrabold text-gray-900">
                             {formatPrice(pkg.basePrice)}
                           </span>
                         </div>

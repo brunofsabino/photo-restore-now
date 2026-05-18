@@ -32,10 +32,6 @@ export default function CheckoutPage() {
   const [imageUrls, setImageUrls] = useState<Map<string, string[]>>(new Map());
   const [uploadedFileKeys, setUploadedFileKeys] = useState<string[]>([]);
 
-  const stripeConfigured =
-    !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY &&
-    process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY !== 'pk_test_your_stripe_publishable_key';
-
   // ── Init ───────────────────────────────────────────────────────────────────
   useEffect(() => {
     setMounted(true);
@@ -211,8 +207,9 @@ export default function CheckoutPage() {
         <Nav />
 
         {/* Green guarantee strip */}
-        <div className="bg-emerald-700 text-white text-sm font-medium py-2.5 text-center">
-          100% Money-Back Guarantee &nbsp;·&nbsp; 7-Day Download Access &nbsp;·&nbsp; Secure Payment via Stripe
+        <div className="bg-emerald-700 text-white text-xs sm:text-sm font-medium py-2 sm:py-2.5 text-center px-2">
+          <span className="sm:hidden">100% Guaranteed · 7-Day Access · Stripe</span>
+          <span className="hidden sm:inline">100% Money-Back Guarantee &nbsp;·&nbsp; 7-Day Download Access &nbsp;·&nbsp; Secure Payment via Stripe</span>
         </div>
 
         <div className="container mx-auto px-4 py-10 max-w-5xl">
@@ -297,9 +294,9 @@ export default function CheckoutPage() {
               size="lg"
               className="w-full bg-blue-600 hover:bg-blue-700 text-white text-base h-13 gap-2 mb-4"
             >
-              <Lock className="h-4 w-4" />
-              Pay Securely — ${(total / 100).toFixed(2)}
-              <ArrowRight className="h-4 w-4" />
+              <Lock className="h-4 w-4 flex-shrink-0" />
+              <span>Pay Securely — ${(total / 100).toFixed(2)}</span>
+              <ArrowRight className="h-4 w-4 flex-shrink-0 hidden sm:block" />
             </Button>
 
             <div className="flex flex-wrap justify-center gap-x-6 gap-y-1 text-xs text-gray-400">

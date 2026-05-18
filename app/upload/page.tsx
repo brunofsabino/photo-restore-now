@@ -6,10 +6,9 @@ import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { useCart } from '@/contexts/CartContext';
-import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE, SERVICE_OPTIONS } from '@/lib/constants';
+import { PRICING_PACKAGES, APP_ROUTES, ALLOWED_FILE_TYPES, MAX_FILE_SIZE } from '@/lib/constants';
 import { formatPrice, formatFileSize, isValidFileType, isValidFileSize, calculateServicePrice, getServiceOption } from '@/lib/utils';
 import { readFile } from '@/lib/image-crop';
 import { PackageType, ServiceType } from '@/types';
@@ -291,7 +290,7 @@ function UploadPageContent() {
           <CardContent>
             {/* Drop Zone */}
             <div
-              className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-lg p-6 md:p-12 text-center transition-colors ${
                 isDragging
                   ? 'border-primary bg-blue-50'
                   : 'border-gray-300 hover:border-primary'
@@ -343,7 +342,7 @@ function UploadPageContent() {
                     </span>
                   )}
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                <div className="grid grid-cols-3 sm:grid-cols-3 md:grid-cols-4 gap-3">
                   {selectedFiles.map((file, index) => (
                     <div
                       key={index}
