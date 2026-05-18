@@ -28,8 +28,8 @@ const MODELS = {
   DEOLDIFY:    '0da600fab0c45a66211339f1c16b71345d22f26ef5fea3dca1bb90bb5711e950',
 };
 
-const POLL_INTERVAL_MS = 4000;
-const MAX_POLL_MS = 300_000; // 5 minutes
+const POLL_INTERVAL_MS = 5000;
+const MAX_POLL_MS = 600_000; // 10 minutes
 
 export class ReplicateProvider implements IAIProvider {
   private apiToken: string;
@@ -135,27 +135,41 @@ export class ReplicateProvider implements IAIProvider {
 
   private async runPrediction(
     version: string,
-    input: Record<string, unknown>
+    input: Record<string, unknown>,
+    attempt = 0
   ): Promise<string> {
-    const url = `${REPLICATE_API}/predictions`;
+    const MAX_ATTEMPTS = 3;
 
-    // POST just creates the prediction and returns an ID — polling handles the wait
-    const response = await axios.post(
-      url,
-      { version, input },
-      {
-        headers: {
-          Authorization: `Bearer ${this.apiToken}`,
-          'Content-Type': 'application/json',
-        },
-        timeout: 15_000,
+    try {
+      const response = await axios.post(
+        `${REPLICATE_API}/predictions`,
+        { version, input },
+        {
+          headers: {
+            Authorization: `Bearer ${this.apiToken}`,
+            'Content-Type': 'application/json',
+          },
+          timeout: 15_000,
+        }
+      );
+
+      const predictionId: string = response.data.id;
+      logger.info('[Replicate] Prediction created', { predictionId, version, attempt });
+
+      return await this.waitForPrediction(predictionId);
+    } catch (error) {
+      const isRetryable = attempt < MAX_ATTEMPTS - 1;
+      const message = error instanceof Error ? error.message : String(error);
+
+      if (isRetryable) {
+        const delay = 10_000 * (attempt + 1); // 10s, 20s backoff
+        logger.warn('[Replicate] Prediction failed, retrying', { attempt, delay, message });
+        await this.sleep(delay);
+        return this.runPrediction(version, input, attempt + 1);
       }
-    );
 
-    const predictionId: string = response.data.id;
-    logger.info('[Replicate] Prediction created', { predictionId, version });
-
-    return this.waitForPrediction(predictionId);
+      throw new Error(`Replicate pipeline failed: ${message}`);
+    }
   }
 
   private async waitForPrediction(predictionId: string): Promise<string> {
