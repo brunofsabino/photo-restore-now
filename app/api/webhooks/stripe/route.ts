@@ -189,8 +189,93 @@ export async function POST(request: NextRequest) {
 
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log('Checkout completed:', session.id);
-        // Handle completed checkout
+
+        logger.info('Checkout session completed', {
+          sessionId: session.id,
+          email: session.customer_email,
+          amount: session.amount_total,
+        });
+
+        try {
+          const email = session.customer_email || session.metadata?.email;
+          if (!email) {
+            logger.error('No email in checkout session', undefined, { sessionId: session.id });
+            break;
+          }
+
+          const user = await prisma.user.findUnique({ where: { email } });
+
+          // Use original USD amount from metadata for storage; fall back to BRL amount
+          const usdAmount = session.metadata?.usdAmount
+            ? parseInt(session.metadata.usdAmount)
+            : session.amount_total || 0;
+
+          const order = await prisma.order.create({
+            data: {
+              userId: user?.id,
+              email,
+              packageId: session.metadata?.packageId || '1-photo',
+              amount: usdAmount,
+              paymentIntentId: session.id,
+              status: 'processing',
+              photoCount: parseInt(session.metadata?.imageCount || '1'),
+              originalFiles: [],
+              restoredFiles: [],
+            },
+          });
+
+          logger.info('Order created from checkout session', { orderId: order.id, email });
+
+          Analytics.paymentSucceeded(email, usdAmount, order.packageId, session.id);
+
+          await sendOrderConfirmation(email, order.id, order.packageId, order.photoCount, usdAmount);
+
+          if (session.metadata?.fileKeys) {
+            try {
+              const fileKeys = session.metadata.fileKeys.split(',');
+              const packageId = session.metadata.packageId || '1-photo';
+              const rawServiceType = session.metadata.serviceType;
+              const validServiceTypes = ['restoration', 'colorization', 'restoration-colorization', 'deep-restoration'];
+              const serviceType = validServiceTypes.includes(rawServiceType) ? rawServiceType : 'restoration';
+
+              const jobId = `job_${Date.now()}_${Math.random().toString(36).substring(7)}`;
+
+              const job = await prisma.job.create({
+                data: {
+                  id: jobId,
+                  orderId: order.id,
+                  userId: user?.id,
+                  email,
+                  packageId,
+                  serviceType,
+                  status: 'pending',
+                  paymentIntentId: session.id,
+                  totalAmount: usdAmount,
+                  images: {
+                    create: fileKeys.map((key, index) => ({
+                      originalName: `image_${index + 1}.jpg`,
+                      size: 0,
+                      mimeType: 'image/jpeg',
+                      originalUrl: `${process.env.R2_PUBLIC_URL}/${key}`,
+                    })),
+                  },
+                },
+              });
+
+              await inngest.send({
+                name: 'photo/restoration.requested',
+                data: { jobId: job.id, orderId: order.id, email, fileKeys, packageId, serviceType },
+              });
+
+              logger.info('Restoration job queued', { orderId: order.id, jobId: job.id });
+            } catch (jobError) {
+              logger.error('Error queuing job', jobError instanceof Error ? jobError : new Error(String(jobError)), { orderId: order.id });
+            }
+          }
+        } catch (error) {
+          logger.error('Error processing checkout.session.completed', error as Error);
+        }
+
         break;
       }
 

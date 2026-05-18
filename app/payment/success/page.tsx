@@ -12,12 +12,14 @@ import { SiteLayout } from '@/components/SiteLayout';
 function PaymentSuccessContent() {
   const searchParams = useSearchParams();
   const { data: session } = useSession();
-  const [paymentIntent, setPaymentIntent] = useState<string | null>(null);
+  const [orderRef, setOrderRef] = useState<string | null>(null);
   const [orderEmail, setOrderEmail] = useState<string | null>(null);
 
   useEffect(() => {
+    const session_id = searchParams.get('session_id');
     const payment_intent = searchParams.get('payment_intent');
-    if (payment_intent) setPaymentIntent(payment_intent);
+    if (session_id) setOrderRef(session_id);
+    else if (payment_intent) setOrderRef(payment_intent);
 
     // Get email from session or guest checkout
     if (session?.user?.email) {
@@ -88,10 +90,10 @@ function PaymentSuccessContent() {
           </div>
 
           {/* Payment Reference */}
-          {paymentIntent && (
+          {orderRef && (
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
               <p className="text-xs text-gray-500 mb-1">Payment Reference</p>
-              <p className="text-sm font-mono text-gray-700 break-all">{paymentIntent}</p>
+              <p className="text-sm font-mono text-gray-700 break-all">{orderRef}</p>
             </div>
           )}
 

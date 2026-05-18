@@ -9,13 +9,14 @@
 
 import Stripe from 'stripe';
 import { PaymentIntent } from '@/types';
+import { logger } from '@/lib/logger';
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('STRIPE_SECRET_KEY is not configured');
 }
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
-  apiVersion: '2024-11-20.acacia',
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  apiVersion: '2023-10-16',
 });
 
 /**
@@ -81,8 +82,7 @@ export async function confirmPaymentStatus(
     if (paymentIntent.status === 'succeeded') {
       return 'succeeded';
     } else if (
-      paymentIntent.status === 'canceled' ||
-      paymentIntent.status === 'payment_failed'
+      paymentIntent.status === 'canceled'
     ) {
       return 'failed';
     } else {
@@ -95,44 +95,59 @@ export async function confirmPaymentStatus(
 }
 
 /**
- * Create a checkout session (alternative approach)
+ * Create an embedded checkout session with Adaptive Pricing (BRL → USD auto-conversion)
  */
-export async function createCheckoutSession(
-  amount: number,
+export async function createEmbeddedCheckoutSession(
+  usdCentsAmount: number,
   email: string,
-  successUrl: string,
-  cancelUrl: string,
   metadata: Record<string, string> = {}
-): Promise<{ sessionId: string; url: string }> {
-  try {
-    const session = await stripe.checkout.sessions.create({
-      payment_method_types: ['card', 'paypal'],
-      line_items: [
-        {
-          price_data: {
-            currency: 'usd',
-            product_data: {
-              name: 'Photo Restoration Service',
-              description: 'AI-powered photo restoration',
-            },
-            unit_amount: amount,
-          },
-          quantity: 1,
-        },
-      ],
-      mode: 'payment',
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      customer_email: email,
-      metadata,
-    });
+): Promise<{ clientSecret: string }> {
+  const rate = parseFloat(process.env.USD_TO_BRL_RATE || '5.80');
+  const brlAmount = Math.round(usdCentsAmount * rate);
+  const imageCount = metadata.imageCount || '1';
+  const serviceType = metadata.serviceType || 'restoration';
+  const count = parseInt(imageCount);
 
-    return {
-      sessionId: session.id,
-      url: session.url || '',
-    };
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    mode: 'payment',
+    ui_mode: 'embedded',
+    currency: 'brl',
+    line_items: [
+      {
+        price_data: {
+          currency: 'brl',
+          product_data: {
+            name: 'Photo Restoration — PhotoRestoreNow',
+            description: `${count} photo${count > 1 ? 's' : ''} · ${serviceType}`,
+          },
+          unit_amount: brlAmount,
+        },
+        quantity: 1,
+      },
+    ],
+    customer_email: email,
+    metadata: {
+      ...metadata,
+      email,
+      usdAmount: usdCentsAmount.toString(),
+    },
+    return_url: `${process.env.NEXTAUTH_URL}/payment/success?session_id={CHECKOUT_SESSION_ID}`,
+  };
+
+  // adaptive_pricing may not be in older SDK types — cast to any
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (sessionParams as any).adaptive_pricing = { enabled: true };
+
+  try {
+    const session = await stripe.checkout.sessions.create(sessionParams);
+
+    if (!session.client_secret) {
+      throw new Error('No client secret returned from Stripe');
+    }
+
+    return { clientSecret: session.client_secret };
   } catch (error) {
-    logger.error('[Payment] Checkout session creation error', error as Error);
+    logger.error('[Payment] Embedded checkout session creation error', error as Error);
     throw new Error('Failed to create checkout session');
   }
 }

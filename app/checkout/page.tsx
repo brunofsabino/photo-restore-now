@@ -4,14 +4,13 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession, signOut } from 'next-auth/react';
 import Link from 'next/link';
-import { Elements } from '@stripe/react-stripe-js';
+import { EmbeddedCheckoutProvider, EmbeddedCheckout } from '@stripe/react-stripe-js';
 import { loadStripe } from '@stripe/stripe-js';
 import { useCart } from '@/contexts/CartContext';
 import { PRICING_PACKAGES, APP_ROUTES } from '@/lib/constants';
 import { calculateServicePrice, getServiceOption } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { StripePaymentForm } from '@/components/checkout/StripePaymentForm';
 import { WatermarkedCanvas } from '@/components/checkout/WatermarkedCanvas';
 import { X, ArrowLeft, User, LogOut, ArrowRight, Shield, Sparkles, Lock } from 'lucide-react';
 
@@ -22,7 +21,7 @@ type Step = 'cart' | 'uploading' | 'preview' | 'paying';
 export default function CheckoutPage() {
   const router = useRouter();
   const { data: session } = useSession();
-  const { cart: cartState, clearCart, getTotalAmount, removeFromCart } = useCart();
+  const { cart: cartState, getTotalAmount, removeFromCart } = useCart();
 
   const [email, setEmail] = useState('');
   const [step, setStep] = useState<Step>('cart');
@@ -107,7 +106,7 @@ export default function CheckoutPage() {
     try {
       const total = getTotalAmount();
       const firstItem = cartState.items[0];
-      const res = await fetch('/api/payment/create-intent', {
+      const res = await fetch('/api/payment/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,11 +125,6 @@ export default function CheckoutPage() {
       setError(err instanceof Error ? err.message : 'Failed to initialize payment.');
       setStep('preview');
     }
-  };
-
-  const handlePaymentSuccess = () => {
-    clearCart();
-    router.push('/payment/success');
   };
 
   // ── Shared Nav ─────────────────────────────────────────────────────────────
@@ -374,20 +368,16 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment form */}
-          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             {clientSecret ? (
-              <Elements
+              <EmbeddedCheckoutProvider
                 stripe={stripePromise}
-                options={{
-                  clientSecret,
-                  locale: 'en',
-                  appearance: { theme: 'stripe', variables: { colorPrimary: '#2563eb' } },
-                }}
+                options={{ clientSecret }}
               >
-                <StripePaymentForm amount={total} onSuccess={handlePaymentSuccess} />
-              </Elements>
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
             ) : (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <div className="w-10 h-10 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mx-auto mb-4" />
                 <p className="text-gray-500 text-sm">Setting up secure payment…</p>
                 {error && <p className="text-red-600 text-sm mt-3">{error}</p>}
