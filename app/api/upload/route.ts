@@ -9,14 +9,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 import { getServerSession } from 'next-auth';
-import sharp from 'sharp';
 import { uploadFile } from '@/services/storage.service';
 import { validateImageFile, sanitizeFileName } from '@/lib/file-validation';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
-
-// Real-ESRGAN GPU limit is ~2M pixels; 1400px longest side gives ~1.96M max for landscape
-const MAX_DIMENSION = 1400;
 import { Analytics } from '@/lib/analytics';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
@@ -99,31 +95,15 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Convert to buffer
+      // Convert to buffer and upload at original resolution
       const arrayBuffer = await file.arrayBuffer();
-      const rawBuffer = Buffer.from(arrayBuffer);
-
-      // Resize if the longest side exceeds MAX_DIMENSION (GPU memory limit)
-      const meta = await sharp(rawBuffer).metadata();
-      const longestSide = Math.max(meta.width || 0, meta.height || 0);
-      let uploadBuffer: Buffer<ArrayBuffer> = rawBuffer;
-      if (longestSide > MAX_DIMENSION) {
-        const resized = await sharp(rawBuffer)
-          .resize(MAX_DIMENSION, MAX_DIMENSION, { fit: 'inside', withoutEnlargement: true })
-          .jpeg({ quality: 92 })
-          .toBuffer();
-        uploadBuffer = resized as Buffer<ArrayBuffer>;
-        logger.info('Image resized before upload', {
-          original: `${meta.width}x${meta.height}`,
-          maxDimension: MAX_DIMENSION,
-        });
-      }
+      const buffer = Buffer.from(arrayBuffer);
 
       // Sanitize filename
       const sanitizedName = sanitizeFileName(file.name);
 
       const result = await uploadFile(
-        uploadBuffer,
+        buffer,
         sanitizedName,
         'ORIGINAL_IMAGES',
         file.type
