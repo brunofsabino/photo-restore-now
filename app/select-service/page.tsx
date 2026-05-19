@@ -102,18 +102,15 @@ function SelectServiceContent() {
 
       <div className="container mx-auto px-4 py-12 max-w-6xl">
         {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">What do you need?</h1>
-          <p className="text-xl text-gray-600 mb-2">
-            {packageInfo.name} — {packageInfo.photoCount} {packageInfo.photoCount === 1 ? 'Photo' : 'Photos'}
-          </p>
-          <p className="text-gray-500">
-            All services include automatic face enhancement at no extra charge
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-bold mb-3">Which describes your photo?</h1>
+          <p className="text-lg text-gray-500">
+            {packageInfo.name} · {packageInfo.photoCount} {packageInfo.photoCount === 1 ? 'Photo' : 'Photos'} · Not sure? Pick <span className="text-primary font-semibold">Restore & Add Color</span> — it works for most old family photos.
           </p>
         </div>
 
         {/* Service Options */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div className="grid md:grid-cols-3 gap-6 mb-8 max-w-4xl mx-auto">
           {SERVICE_OPTIONS.map((service) => {
             const price = calculateServicePrice(packageInfo.basePrice, service.id);
             const pricePerPhoto = Math.round(price / packageInfo.photoCount);
@@ -124,27 +121,27 @@ function SelectServiceContent() {
                 key={service.id}
                 className={`cursor-pointer transition-all hover:shadow-xl relative ${
                   isSelected ? 'ring-2 ring-primary shadow-xl scale-105' : ''
-                } ${service.popular ? 'border-primary' : ''}`}
+                } ${service.popular ? 'border-primary border-2' : ''}`}
                 onClick={() => setSelectedService(service.id)}
               >
                 {service.popular && (
                   <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
                     <span className="bg-primary text-white px-4 py-1 rounded-full text-sm font-semibold">
-                      Most Popular
+                      Best Choice
                     </span>
                   </div>
                 )}
 
-                <CardHeader className="text-center">
-                  <div className="text-5xl mb-4">{service.icon}</div>
+                <CardHeader className="text-center pb-2">
+                  <div className="text-5xl mb-3">{service.icon}</div>
                   <CardTitle className="text-xl mb-2">{service.name}</CardTitle>
-                  <CardDescription className="text-sm min-h-[60px]">
+                  <CardDescription className="text-sm min-h-[56px] leading-relaxed">
                     {service.description}
                   </CardDescription>
                 </CardHeader>
 
-                <CardContent className="text-center">
-                  <div className="mb-3">
+                <CardContent className="text-center pt-2">
+                  <div className="mb-4">
                     <div className="text-3xl font-bold text-primary mb-1">
                       {formatPrice(price)}
                     </div>
@@ -155,16 +152,13 @@ function SelectServiceContent() {
                     )}
                   </div>
 
-                  <div className="inline-flex items-center gap-1.5 text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1 mb-3">
-                    <Check className="h-3 w-3" />
-                    <span>Face enhancement included</span>
-                  </div>
-
-                  {isSelected && (
-                    <div className="flex items-center justify-center gap-2 text-primary font-medium mt-2">
+                  {isSelected ? (
+                    <div className="flex items-center justify-center gap-2 text-primary font-semibold bg-blue-50 rounded-lg py-2">
                       <Check className="h-5 w-5" />
                       <span>Selected</span>
                     </div>
+                  ) : (
+                    <div className="text-sm text-gray-400 py-2">Click to select</div>
                   )}
                 </CardContent>
               </Card>
@@ -172,103 +166,21 @@ function SelectServiceContent() {
           })}
         </div>
 
-        {/* Feature Comparison */}
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>What's included in every service</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">🔧 Photo Restoration</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Remove scratches & tears</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Fix faded & damaged areas</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>4× upscaling for clarity</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Automatic face enhancement</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">🎨 Colorization</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>AI-powered color detection</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Natural, realistic skin tones</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Accurate object & clothing colors</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Automatic face enhancement</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">⭐ Full Restoration</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Everything in both services above</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Best results for damaged B&W photos</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>3-stage AI pipeline</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Automatic face enhancement</span>
-                  </li>
-                </ul>
-              </div>
-
-              <div>
-                <h4 className="font-semibold mb-3 text-gray-700">🛠️ Deep Restoration</h4>
-                <ul className="space-y-2 text-gray-600">
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>AI inpainting fills fold marks & creases</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Repairs large missing or white areas</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>4-stage pipeline (longest, best results)</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <Check className="h-4 w-4 text-green-600 mt-0.5 flex-shrink-0" />
-                    <span>Automatic face enhancement</span>
-                  </li>
-                </ul>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Simple reassurance strip */}
+        <div className="max-w-4xl mx-auto mb-8 grid grid-cols-3 gap-4 text-center text-sm text-gray-500">
+          <div className="flex flex-col items-center gap-1">
+            <Check className="h-5 w-5 text-green-500" />
+            <span>Face enhancement included in every order</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <Check className="h-5 w-5 text-green-500" />
+            <span>HD quality download, no watermark</span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <Check className="h-5 w-5 text-green-500" />
+            <span>7-day money-back guarantee</span>
+          </div>
+        </div>
 
         {/* Continue Button */}
         <div className="flex justify-center">
@@ -276,7 +188,7 @@ function SelectServiceContent() {
             size="lg"
             onClick={handleContinue}
             disabled={!selectedService}
-            className="gap-2 px-8"
+            className="gap-2 px-10 text-lg h-14"
           >
             Continue to Upload
             <ArrowRight className="h-5 w-5" />
