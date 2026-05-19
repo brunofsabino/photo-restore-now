@@ -81,16 +81,33 @@ export default function CheckoutPage() {
       const files = allFiles();
       if (files.length === 0) throw new Error('No photos in cart.');
 
-      const formData = new FormData();
-      files.forEach(f => formData.append('files', f));
+      const uploadedKeys: string[] = [];
 
-      const res = await fetch('/api/upload', { method: 'POST', body: formData });
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Upload failed');
+      for (const file of files) {
+        // Step 1: get a pre-signed PUT URL (tiny request — no body size issue)
+        const presignRes = await fetch('/api/upload/presign', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filename: file.name, contentType: file.type, size: file.size }),
+        });
+        if (!presignRes.ok) {
+          const d = await presignRes.json().catch(() => ({}));
+          throw new Error(d.error || 'Failed to prepare upload');
+        }
+        const { uploadUrl, key } = await presignRes.json();
+
+        // Step 2: upload file directly to R2 (bypasses Vercel body limit)
+        const putRes = await fetch(uploadUrl, {
+          method: 'PUT',
+          headers: { 'Content-Type': file.type },
+          body: file,
+        });
+        if (!putRes.ok) throw new Error(`Upload failed (${putRes.status})`);
+
+        uploadedKeys.push(key);
       }
-      const result = await res.json();
-      setUploadedFileKeys(result.files.map((f: { key: string }) => f.key));
+
+      setUploadedFileKeys(uploadedKeys);
       setStep('preview');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to upload photos.');

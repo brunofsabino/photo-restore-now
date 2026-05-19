@@ -297,10 +297,14 @@ export async function sendRestorationComplete(
 
   const downloadButtons = options.downloadLinks
     .map(
-      (link, i) => `
+      (link, i) => {
+        const filename = `restored-photo-${i + 1}.jpg`;
+        const proxyUrl = `${APP_URL}/api/download?url=${encodeURIComponent(link)}&filename=${encodeURIComponent(filename)}`;
+        return `
       <tr><td style="padding:6px 0;text-align:center;">
-        ${btn(link, `⬇ Download Photo ${i + 1}`, '#059669')}
-      </td></tr>`
+        ${btn(proxyUrl, `⬇ Download Photo ${i + 1}`, '#059669')}
+      </td></tr>`;
+      }
     )
     .join('');
 

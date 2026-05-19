@@ -13,15 +13,11 @@ import { ScrollDrivenPhone } from '@/components/animations/ScrollDrivenPhone';
 export default function HomePage() {
   const { data: session, status } = useSession();
   
-  // Before/after pairs — same photo, different Unsplash params simulate damage → restored
-  // 1. Wedding couple (1st-fold hero slider + gallery slot 1)
-  // 2. Military/formal veteran portrait (gallery slot 2 — most emotional for 50+ Americans)
-  // 3. Family portrait with children (gallery slot 3)
   const examples = [
     {
-      before: 'https://images.unsplash.com/photo-1583503886602-fc9ab6ea9bc6?w=800&h=600&fit=crop&q=80&sat=-80&blur=2',
-      after:  'https://images.unsplash.com/photo-1583503886602-fc9ab6ea9bc6?w=800&h=600&fit=crop&q=80',
-      title: 'Family Reunion, 1952',
+      before: '/images/samples/soldiers-before.webp',
+      after:  '/images/samples/soldiers-after.webp',
+      title: 'Real Result — Restored & Colorized',
     },
     {
       before: 'https://images.unsplash.com/photo-1507679799987-c73779587ccf?w=800&h=600&fit=crop&q=80&sat=-100&blur=3',

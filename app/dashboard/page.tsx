@@ -55,11 +55,15 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
+function proxyDownloadUrl(url: string, filename: string): string {
+  return `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(filename)}`;
+}
+
 function downloadAll(urls: string[]) {
   urls.forEach((url, i) => {
     setTimeout(() => {
       const a = document.createElement('a');
-      a.href = url;
+      a.href = proxyDownloadUrl(url, `restored-photo-${i + 1}.jpg`);
       a.download = `restored-photo-${i + 1}.jpg`;
       document.body.appendChild(a);
       a.click();
@@ -118,7 +122,7 @@ function PhotoPair({
             <>
               <img src={restored} alt={`Restored ${index + 1}`} className="w-full h-full object-cover" />
               <a
-                href={restored}
+                href={proxyDownloadUrl(restored, `restored-photo-${index + 1}.jpg`)}
                 download={`restored-photo-${index + 1}.jpg`}
                 onClick={e => e.stopPropagation()}
                 className="absolute inset-0 flex items-end justify-end p-2 opacity-0 group-hover:opacity-100 transition-opacity"
