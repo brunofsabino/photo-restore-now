@@ -63,7 +63,7 @@ export class ReplicateProvider implements IAIProvider {
     let currentUrl: string = inputDataUri;
 
     try {
-      if (this.serviceType === 'restoration') {
+      if (this.serviceType === 'restoration' || this.serviceType === 'deep-restoration') {
         currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
@@ -74,12 +74,6 @@ export class ReplicateProvider implements IAIProvider {
       } else if (this.serviceType === 'restoration-colorization') {
         currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runDeOldify(currentUrl);
-        currentUrl = await this.runRealESRGAN(currentUrl);
-
-      } else if (this.serviceType === 'deep-restoration') {
-        // Double GFPGAN pass for maximum damage repair, then high-res upscale
-        currentUrl = await this.runGFPGAN(currentUrl);
-        currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
       }
 
