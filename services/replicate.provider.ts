@@ -68,12 +68,12 @@ export class ReplicateProvider implements IAIProvider {
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else if (this.serviceType === 'restoration-colorization') {
-        currentUrl = await this.runBringingOldPhotos(currentUrl);
+        currentUrl = await this.tryBringingOldPhotos(currentUrl);
         currentUrl = await this.runDeOldify(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else if (this.serviceType === 'deep-restoration') {
-        currentUrl = await this.runBringingOldPhotos(currentUrl);
+        currentUrl = await this.tryBringingOldPhotos(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else {
@@ -119,6 +119,17 @@ export class ReplicateProvider implements IAIProvider {
     });
   }
 
+  private async tryBringingOldPhotos(imageUrl: string): Promise<string> {
+    try {
+      return await this.runBringingOldPhotos(imageUrl);
+    } catch (error: any) {
+      logger.warn('[Replicate] BringingOldPhotos failed — skipping damage repair step', {
+        error: error?.message,
+      });
+      return imageUrl;
+    }
+  }
+
   private async runBringingOldPhotos(imageUrl: string): Promise<string> {
     logger.info('[Replicate] Running BringingOldPhotos (damage repair)');
     const { owner, name } = BRINGING_OLD_PHOTOS_SLUG;
@@ -161,8 +172,10 @@ export class ReplicateProvider implements IAIProvider {
       logger.info('[Replicate] Prediction created', { predictionId, version, attempt });
 
       return await this.waitForPrediction(predictionId);
-    } catch (error) {
-      const isRetryable = attempt < MAX_ATTEMPTS - 1;
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const is404 = status === 404;
+      const isRetryable = attempt < MAX_ATTEMPTS - 1 && !is404;
       const message = error instanceof Error ? error.message : String(error);
 
       if (isRetryable) {
