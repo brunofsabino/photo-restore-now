@@ -59,7 +59,7 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://client.crisp.chat",
               "img-src 'self' data: https: blob:",
               "font-src 'self' data:",
-              "connect-src 'self' https://api.stripe.com https://*.cloudflare.com https://*.amazonaws.com https://client.crisp.chat wss://client.crisp.chat https://api-js.mixpanel.com",
+              "connect-src 'self' https://api.stripe.com https://*.cloudflare.com https://*.amazonaws.com https://*.r2.cloudflarestorage.com https://client.crisp.chat wss://client.crisp.chat https://api-js.mixpanel.com",
               "frame-src 'self' https://js.stripe.com https://game.crisp.chat",
               "object-src 'none'",
               "base-uri 'self'",
