@@ -26,7 +26,7 @@ const MODELS = {
 };
 
 // BringingOldPhotos version is resolved at runtime to always use latest
-const BRINGING_OLD_PHOTOS_SLUG = { owner: 'codeslake', name: 'bringing-old-photos-back-to-life' };
+const BRINGING_OLD_PHOTOS_SLUG = { owner: 'microsoft', name: 'bringing-old-photos-back-to-life' };
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_POLL_MS = 600_000; // 10 minutes
@@ -142,6 +142,7 @@ export class ReplicateProvider implements IAIProvider {
     logger.info('[Replicate] BringingOldPhotos version resolved', { version });
     return this.runPrediction(version, {
       image: imageUrl,
+      HR: true,
       with_scratch: true,
     });
   }
