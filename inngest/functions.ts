@@ -107,7 +107,7 @@ export const processRestorationJob = inngest.createFunction(
           const origH = origMeta.height ?? 0;
           const longestSide = Math.max(origW, origH);
 
-          logger.info('[Inngest] Original image dimensions', { origW, origH, longestSide });
+          logger.info('[Inngest] Processing image', { serviceType, origW, origH, longestSide });
 
           // Create a working URL: resize to Replicate limit if needed, else use original
           let workingUrl = image.originalUrl;

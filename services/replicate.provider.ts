@@ -63,12 +63,12 @@ export class ReplicateProvider implements IAIProvider {
       if (this.serviceType === 'restoration' || this.serviceType === 'deep-restoration') {
         currentUrl = await this.runRealESRGAN(currentUrl);
 
-      } else if (this.serviceType === 'colorization') {
+      } else if (this.serviceType === 'colorization' || this.serviceType === 'restoration-colorization') {
         currentUrl = await this.runDeOldify(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
-      } else if (this.serviceType === 'restoration-colorization') {
-        currentUrl = await this.runDeOldify(currentUrl);
+      } else {
+        logger.warn('[Replicate] Unknown serviceType — falling back to restoration', { serviceType: this.serviceType });
         currentUrl = await this.runRealESRGAN(currentUrl);
       }
 
@@ -102,11 +102,11 @@ export class ReplicateProvider implements IAIProvider {
   }
 
   private async runDeOldify(imageUrl: string): Promise<string> {
-    logger.info('[Replicate] Running DeOldify (colorization)');
+    logger.info('[Replicate] Running DeOldify (colorization)', { imageUrl });
     return this.runPrediction(MODELS.DEOLDIFY, {
       input_image: imageUrl,
-      model_name: 'Stable',
-      render_factor: 35,
+      model_name: 'Artistic',
+      render_factor: 40,
     });
   }
 
