@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
         // Restore with AI
         const aiProvider = AIProviderFactory.getProvider();
-        const restoredBuffer = await aiProvider.restorePhoto(buffer);
+        const restoredBuffer = await aiProvider.restorePhoto(originalResult.url);
         console.log(`[TEST-ORDER] Image ${i + 1} restored successfully`);
 
         // Save restored

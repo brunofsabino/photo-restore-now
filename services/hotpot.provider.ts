@@ -22,7 +22,7 @@ export class HotpotProvider implements IAIProvider {
     return 'Hotpot AI';
   }
 
-  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
+  async restorePhoto(imageUrl: string): Promise<Buffer> {
     console.log('[Hotpot] Starting photo restoration...');
 
     if (!this.apiKey) {
@@ -30,26 +30,15 @@ export class HotpotProvider implements IAIProvider {
     }
 
     try {
-      // TODO: Implement actual Hotpot AI API call
-      // For now, return the original image as a placeholder
-      // This will be replaced with real API integration
-      
-      console.log('[Hotpot] Processing image...');
-      
-      // Placeholder: In production, this would call Hotpot API
-      // Example API flow:
-      // 1. Upload image to Hotpot
-      // 2. Start restoration job
-      // 3. Poll for completion
-      // 4. Download restored image
-      
       console.warn('[Hotpot] Using mock restoration - implement real API call');
-      
+
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Return original image as placeholder
-      return imageBuffer;
+      const response = await fetch(imageUrl);
+      const arrayBuffer = await response.arrayBuffer();
+      return Buffer.from(arrayBuffer);
 
     } catch (error: any) {
       console.error('[Hotpot] Restoration failed:', error);

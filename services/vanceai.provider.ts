@@ -40,11 +40,15 @@ export class VanceAIProvider implements IAIProvider {
     return 'VanceAI';
   }
 
-  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
+  async restorePhoto(imageUrl: string): Promise<Buffer> {
     const startTime = Date.now();
     logger.info('[VanceAI] Starting real photo restoration');
 
     try {
+      // Download from URL before uploading to VanceAI
+      const imageResp = await axios.get(imageUrl, { responseType: 'arraybuffer', timeout: 30_000 });
+      const imageBuffer = Buffer.from(imageResp.data);
+
       // Step 1: Upload image to VanceAI
       const uid = await this.uploadImage(imageBuffer);
       logger.info('[VanceAI] Image uploaded', { uid });

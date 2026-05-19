@@ -12,9 +12,11 @@ export class FakeProvider implements ImageRestorationProvider {
     return this.name;
   }
 
-  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
-    console.log('[FAKE-AI] restorePhoto called — returning original image unchanged');
-    return imageBuffer;
+  async restorePhoto(imageUrl: string): Promise<Buffer> {
+    console.log('[FAKE-AI] restorePhoto called — downloading and returning original image unchanged');
+    const response = await fetch(imageUrl);
+    const arrayBuffer = await response.arrayBuffer();
+    return Buffer.from(arrayBuffer);
   }
   
   private jobs = new Map<string, {

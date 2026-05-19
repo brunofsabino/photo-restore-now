@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
       
       // Import AI provider and process
       const { AIProviderFactory } = await import('@/services/ai-provider.factory');
-      const { downloadFile, uploadFile } = await import('@/services/storage.service');
+      const { uploadFile } = await import('@/services/storage.service');
       
       let successCount = 0;
       let failCount = 0;
@@ -173,17 +173,9 @@ export async function POST(request: NextRequest) {
             continue;
           }
           
-          // Extract key from URL (e.g., "original/xyz.png" from "https://...r2.dev/original/xyz.png")
-          const key = image.originalUrl.includes('r2.dev/') 
-            ? image.originalUrl.split('r2.dev/')[1]
-            : image.originalUrl;
-          
-          // Download original
-          const originalBuffer = await downloadFile(key);
-          
-          // Restore with AI
+          // Restore with AI — pass original URL directly
           const provider = AIProviderFactory.getProvider(undefined, serviceType as any);
-          const restoredBuffer = await provider.restorePhoto(originalBuffer);
+          const restoredBuffer = await provider.restorePhoto(image.originalUrl);
           
           // Upload restored
           const restoredResult = await uploadFile(

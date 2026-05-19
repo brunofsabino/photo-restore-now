@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { AIProviderFactory } from '@/services/ai-provider.factory';
 import { storageService } from '@/services/storage.service';
-import { writeFile } from 'fs/promises';
-import { join } from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
 /**
@@ -60,7 +58,7 @@ export async function POST(req: NextRequest) {
     const aiProvider = AIProviderFactory.getProvider(provider as 'vanceai' | 'hotpot' | 'fake');
     
     console.log(`[TEST-RESTORE] Starting restoration...`);
-    const restoredBuffer = await aiProvider.restorePhoto(buffer);
+    const restoredBuffer = await aiProvider.restorePhoto(originalResult.url);
     
     console.log(`[TEST-RESTORE] Restoration complete. Size: ${restoredBuffer.length} bytes`);
 

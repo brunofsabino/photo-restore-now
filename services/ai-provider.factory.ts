@@ -14,7 +14,7 @@ export type AIProviderType = 'replicate' | 'vanceai' | 'hotpot' | 'fake';
 export type { ServiceType };
 
 export interface IAIProvider {
-  restorePhoto(imageBuffer: Buffer): Promise<Buffer>;
+  restorePhoto(imageUrl: string): Promise<Buffer>;
   getName(): string;
 }
 

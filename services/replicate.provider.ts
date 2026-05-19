@@ -53,26 +53,21 @@ export class ReplicateProvider implements IAIProvider {
     return `Replicate (${this.serviceType})`;
   }
 
-  async restorePhoto(imageBuffer: Buffer): Promise<Buffer> {
+  async restorePhoto(imageUrl: string): Promise<Buffer> {
     const startTime = Date.now();
     logger.info('[Replicate] Starting pipeline', { serviceType: this.serviceType });
 
-    // First model always receives a base64 data URI; subsequent models use the output URL.
-    const inputDataUri = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
-
-    let currentUrl: string = inputDataUri;
+    let currentUrl: string = imageUrl;
 
     try {
       if (this.serviceType === 'restoration' || this.serviceType === 'deep-restoration') {
-        currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else if (this.serviceType === 'colorization') {
         currentUrl = await this.runDeOldify(currentUrl);
-        currentUrl = await this.runGFPGAN(currentUrl);
+        currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else if (this.serviceType === 'restoration-colorization') {
-        currentUrl = await this.runGFPGAN(currentUrl);
         currentUrl = await this.runDeOldify(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
       }
@@ -96,15 +91,6 @@ export class ReplicateProvider implements IAIProvider {
   }
 
   // ─── Model runners ───────────────────────────────────────────────────────────
-
-  private async runGFPGAN(imageUrl: string): Promise<string> {
-    logger.info('[Replicate] Running GFPGAN (face restoration)');
-    return this.runPrediction(MODELS.GFPGAN, {
-      img: imageUrl,
-      version: 'v1.4',
-      scale: 2,
-    });
-  }
 
   private async runRealESRGAN(imageUrl: string): Promise<string> {
     logger.info('[Replicate] Running Real-ESRGAN (upscaling)');

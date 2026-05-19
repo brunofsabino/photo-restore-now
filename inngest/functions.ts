@@ -6,12 +6,11 @@
 import { inngest } from '@/lib/inngest';
 import { PrismaClient } from '@prisma/client';
 import { AIProviderFactory } from '@/services/ai-provider.factory';
-import { downloadFile, uploadFile, getPublicUrlFromKey } from '@/services/storage.service';
+import { uploadFile } from '@/services/storage.service';
 import { sendRestorationComplete, sendRestorationFailed } from '@/services/email.service';
 import { logger } from '@/lib/logger';
 import { Analytics } from '@/lib/analytics';
 import { ErrorTracker } from '@/lib/error-tracking';
-import path from 'path';
 
 const prisma = new PrismaClient();
 
@@ -26,7 +25,7 @@ export const processRestorationJob = inngest.createFunction(
     triggers: [{ event: 'photo/restoration.requested' }],
   },
   async ({ event, step }) => {
-    const { jobId, orderId, email, fileKeys, packageId, serviceType } = event.data;
+    const { jobId, orderId, email, fileKeys, serviceType } = event.data;
 
     logger.info('[Inngest] Starting restoration job', {
       jobId,
@@ -51,17 +50,7 @@ export const processRestorationJob = inngest.createFunction(
       logger.info('[Inngest] Job status updated to processing', { jobId });
     });
 
-    // Step 2: Get AI provider
-    const provider = await step.run('get-ai-provider', async () => {
-      const aiProvider = AIProviderFactory.getProvider();
-      logger.info('[Inngest] Using AI provider', {
-        provider: aiProvider.getName(),
-        serviceType,
-      });
-      return aiProvider.getName();
-    });
-
-    // Step 3: Process each image
+    // Step 2: Process each image
     const restoredImages: Array<{
       id: string;
       originalUrl: string;
@@ -105,23 +94,14 @@ export const processRestorationJob = inngest.createFunction(
             throw new Error('Image original URL is null');
           }
 
-          // Download original
-          logger.info('[Inngest] Downloading original image', { url: image.originalUrl });
-          // Extract R2 key from full URL if needed
-          const r2PublicUrl = process.env.R2_PUBLIC_URL || '';
-          const fileKey = image.originalUrl.startsWith(r2PublicUrl)
-            ? image.originalUrl.replace(r2PublicUrl + '/', '')
-            : image.originalUrl;
-          const originalBuffer = await downloadFile(fileKey);
-
-          // Restore with AI (using serviceType from job)
+          // Restore with AI — pass R2 URL directly (avoids base64 conversion issues)
           const aiProvider = AIProviderFactory.getProvider(undefined, serviceType as any);
           logger.info('[Inngest] Restoring image with AI', {
             provider: aiProvider.getName(),
             serviceType,
-            originalSize: originalBuffer.length,
+            imageUrl: image.originalUrl,
           });
-          const restoredBuffer = await aiProvider.restorePhoto(originalBuffer);
+          const restoredBuffer = await aiProvider.restorePhoto(image.originalUrl);
 
           // Upload restored
           const filename = `${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
