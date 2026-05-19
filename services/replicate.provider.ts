@@ -101,7 +101,7 @@ export class ReplicateProvider implements IAIProvider {
 
   // ─── Model runners ───────────────────────────────────────────────────────────
 
-  private async runRealESRGAN(imageUrl: string): Promise<string> {
+  async runRealESRGAN(imageUrl: string): Promise<string> {
     logger.info('[Replicate] Running Real-ESRGAN (upscaling)');
     return this.runPrediction(MODELS.REAL_ESRGAN, {
       image: imageUrl,
@@ -110,7 +110,7 @@ export class ReplicateProvider implements IAIProvider {
     });
   }
 
-  private async runDeOldify(imageUrl: string): Promise<string> {
+  async runDeOldify(imageUrl: string): Promise<string> {
     logger.info('[Replicate] Running DeOldify (colorization)', { imageUrl });
     return this.runPrediction(MODELS.DEOLDIFY, {
       input_image: imageUrl,
@@ -130,7 +130,7 @@ export class ReplicateProvider implements IAIProvider {
     }
   }
 
-  private async runBringingOldPhotos(imageUrl: string): Promise<string> {
+  async runBringingOldPhotos(imageUrl: string): Promise<string> {
     logger.info('[Replicate] Running BringingOldPhotos (damage repair)');
     const { owner, name } = BRINGING_OLD_PHOTOS_SLUG;
     const modelResp = await axios.get(
