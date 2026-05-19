@@ -253,7 +253,7 @@ export default function CheckoutPage() {
                         className="w-full h-full object-cover"
                         draggable={false}
                         onContextMenu={e => e.preventDefault()}
-                        style={{ filter: 'grayscale(0.25) contrast(0.9)', userSelect: 'none' }}
+                        style={{ filter: hasColorization ? 'grayscale(1) contrast(0.9)' : 'grayscale(0.25) contrast(0.9)', userSelect: 'none' }}
                       />
                     </div>
                   </div>
@@ -263,7 +263,7 @@ export default function CheckoutPage() {
                       After (preview)
                     </p>
                     <div className="aspect-square rounded-xl overflow-hidden border-2 border-emerald-400 shadow-md">
-                      <WatermarkedCanvas objectUrl={url} />
+                      <WatermarkedCanvas objectUrl={url} serviceType={previewServiceType} />
                     </div>
                   </div>
                 </div>

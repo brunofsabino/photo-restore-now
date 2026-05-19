@@ -4,10 +4,11 @@ import { useEffect, useRef } from 'react';
 
 interface WatermarkedCanvasProps {
   objectUrl: string;
+  serviceType?: string;
   label?: string;
 }
 
-export function WatermarkedCanvas({ objectUrl, label }: WatermarkedCanvasProps) {
+export function WatermarkedCanvas({ objectUrl, serviceType, label }: WatermarkedCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -23,10 +24,37 @@ export function WatermarkedCanvas({ objectUrl, label }: WatermarkedCanvasProps) 
       canvas.width = W;
       canvas.height = H;
 
-      // Draw image with simulated enhancement filters
-      ctx.filter = 'brightness(1.09) contrast(1.14) saturate(1.12)';
-      ctx.drawImage(img, 0, 0);
-      ctx.filter = 'none';
+      const isColorization = serviceType === 'colorization' || serviceType === 'restoration-colorization';
+
+      if (isColorization) {
+        // Step 1: draw sharpened base
+        ctx.filter = 'brightness(1.08) contrast(1.18) saturate(0.05)';
+        ctx.drawImage(img, 0, 0);
+        ctx.filter = 'none';
+
+        // Step 2: warm color tint overlay to simulate sepia/colorized tones
+        ctx.globalCompositeOperation = 'color';
+        ctx.globalAlpha = 0.55;
+        const warmGrad = ctx.createLinearGradient(0, 0, W, H);
+        warmGrad.addColorStop(0, '#b5813a');
+        warmGrad.addColorStop(0.4, '#7a9e6e');
+        warmGrad.addColorStop(0.7, '#6b8fad');
+        warmGrad.addColorStop(1, '#8c6a3f');
+        ctx.fillStyle = warmGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Step 3: restore compositing and add a final color-boost pass
+        ctx.globalCompositeOperation = 'source-over';
+        ctx.globalAlpha = 1;
+        ctx.filter = 'saturate(1.6) brightness(1.04)';
+        ctx.drawImage(canvas, 0, 0);
+        ctx.filter = 'none';
+      } else {
+        // Restoration: sharper, higher contrast, subtle detail enhancement
+        ctx.filter = 'brightness(1.09) contrast(1.18) saturate(1.08) sharpen(1)';
+        ctx.drawImage(img, 0, 0);
+        ctx.filter = 'none';
+      }
 
       // Subtle vignette
       const vignette = ctx.createRadialGradient(W / 2, H / 2, W * 0.38, W / 2, H / 2, W * 0.78);
