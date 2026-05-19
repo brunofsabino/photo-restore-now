@@ -1,17 +1,15 @@
 /**
  * Replicate AI Provider
  * Uses specialized models in pipeline per service type:
- *   restoration:              GFPGAN → Real-ESRGAN
- *   colorization:             DeOldify → GFPGAN
- *   restoration-colorization: GFPGAN → DeOldify → Real-ESRGAN
- *   deep-restoration:         BringingOldPhotos (inpainting) → GFPGAN → Real-ESRGAN
- *
- * Face enhancement (GFPGAN) runs automatically on every pipeline —
- * users don't need to know about it.
+ *   restoration:              Real-ESRGAN (face_enhance)
+ *   colorization:             DeOldify → Real-ESRGAN
+ *   restoration-colorization: BringingOldPhotos → DeOldify → Real-ESRGAN
+ *   deep-restoration:         BringingOldPhotos → Real-ESRGAN
  *
  * BringingOldPhotos: Microsoft Research model that auto-detects fold marks,
- * creases, and tears — no user-drawn mask required.
+ * creases, tears, and white marks — no user-drawn mask required.
  * Replicate: codeslake/bringing-old-photos-back-to-life
+ * Version fetched dynamically at runtime via /v1/models endpoint.
  */
 
 import axios from 'axios';
@@ -23,10 +21,12 @@ const REPLICATE_API = 'https://api.replicate.com/v1';
 
 // Version-based model IDs — required by the /v1/predictions endpoint
 const MODELS = {
-  GFPGAN:      '0fbacf7afc6c144e5be9767cff80f25aff23e52b0708f17e20f9879b2f21516c',
   REAL_ESRGAN: 'b3ef194191d13140337468c916c2c5b96dd0cb06dffc032a022a31807f6a5ea8',
   DEOLDIFY:    '0da600fab0c45a66211339f1c16b71345d22f26ef5fea3dca1bb90bb5711e950',
 };
+
+// BringingOldPhotos version is resolved at runtime to always use latest
+const BRINGING_OLD_PHOTOS_SLUG = { owner: 'codeslake', name: 'bringing-old-photos-back-to-life' };
 
 const POLL_INTERVAL_MS = 5000;
 const MAX_POLL_MS = 600_000; // 10 minutes
@@ -60,11 +60,20 @@ export class ReplicateProvider implements IAIProvider {
     let currentUrl: string = imageUrl;
 
     try {
-      if (this.serviceType === 'restoration' || this.serviceType === 'deep-restoration') {
+      if (this.serviceType === 'restoration') {
         currentUrl = await this.runRealESRGAN(currentUrl);
 
-      } else if (this.serviceType === 'colorization' || this.serviceType === 'restoration-colorization') {
+      } else if (this.serviceType === 'colorization') {
         currentUrl = await this.runDeOldify(currentUrl);
+        currentUrl = await this.runRealESRGAN(currentUrl);
+
+      } else if (this.serviceType === 'restoration-colorization') {
+        currentUrl = await this.runBringingOldPhotos(currentUrl);
+        currentUrl = await this.runDeOldify(currentUrl);
+        currentUrl = await this.runRealESRGAN(currentUrl);
+
+      } else if (this.serviceType === 'deep-restoration') {
+        currentUrl = await this.runBringingOldPhotos(currentUrl);
         currentUrl = await this.runRealESRGAN(currentUrl);
 
       } else {
@@ -110,6 +119,21 @@ export class ReplicateProvider implements IAIProvider {
     });
   }
 
+  private async runBringingOldPhotos(imageUrl: string): Promise<string> {
+    logger.info('[Replicate] Running BringingOldPhotos (damage repair)');
+    const { owner, name } = BRINGING_OLD_PHOTOS_SLUG;
+    const modelResp = await axios.get(
+      `${REPLICATE_API}/models/${owner}/${name}`,
+      { headers: { Authorization: `Bearer ${this.apiToken}` }, timeout: 10_000 }
+    );
+    const version: string = modelResp.data?.latest_version?.id;
+    if (!version) throw new Error('Could not resolve BringingOldPhotos model version');
+    logger.info('[Replicate] BringingOldPhotos version resolved', { version });
+    return this.runPrediction(version, {
+      image: imageUrl,
+      with_scratch: true,
+    });
+  }
 
   // ─── Prediction lifecycle ────────────────────────────────────────────────────
 
